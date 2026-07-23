@@ -18,9 +18,11 @@ class ModelMetadata(BaseModel):
 
     type: str = "unknown"
 
-    format: str = "unknown"
-
     architecture: str = "unknown"
+
+    framework: str = "unknown"
+
+    format: str = "unknown"
 
     size: str = "unknown"
 

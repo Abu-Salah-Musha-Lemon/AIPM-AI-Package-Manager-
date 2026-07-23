@@ -68,9 +68,13 @@ def list_models():
         )
 
         table.add_row(
-            info.name,
-            info.format,
-            info.size,
+            "Type",
+            info.type
+        )
+
+        table.add_row(
+            "Architecture",
+            info.architecture
         )
 
 

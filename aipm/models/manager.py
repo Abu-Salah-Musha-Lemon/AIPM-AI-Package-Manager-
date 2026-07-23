@@ -200,11 +200,92 @@ class ModelManager:
 
 
         return ModelMetadata(
-            name=name,
-            path=path,
-            size=size,
-            format=self.detect_format(path),
-        )
+              name=name,
+              path=path,
+              size=size,
+              format=self.detect_format(path),
+              type=self.detect_type(path),
+              architecture=self.detect_architecture(path),
+          )
+    
+    def detect_type(
+    self,
+    path: Path,
+    ) -> str:
+        """
+        Detect model category.
+        """
+
+        name = path.name.lower()
+
+
+        if any(
+            word in name
+            for word in [
+                "flux",
+                "sd",
+                "stable",
+                "diffusion",
+            ]
+        ):
+            return "image-generation"
+
+
+        if any(
+            word in name
+            for word in [
+                "llama",
+                "mistral",
+                "qwen",
+                "gemma",
+            ]
+        ):
+            return "language-model"
+
+
+        if any(
+            word in name
+            for word in [
+                "whisper",
+                "audio",
+            ]
+        ):
+            return "audio-model"
+
+
+        return "unknown"
+    def detect_architecture(
+    self,
+    path: Path,
+    ) -> str:
+        """
+        Detect model architecture.
+        """
+
+        name = path.name.lower()
+
+
+        if "flux" in name:
+            return "FLUX"
+
+
+        if "sdxl" in name:
+            return "Stable Diffusion XL"
+
+
+        if "sd15" in name:
+            return "Stable Diffusion 1.5"
+
+
+        if "llama" in name:
+            return "LLaMA"
+
+
+        if "mistral" in name:
+            return "Mistral"
+
+
+        return "unknown"
 
 
 
