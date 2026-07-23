@@ -56,10 +56,11 @@ class ConfigManager:
         ) as file:
 
             yaml.safe_dump(
-                config.model_dump(mode="json"),
-                file,
-                sort_keys=False,
-            )
+                    config.model_dump(),
+                    file,
+                    sort_keys=False,
+                    allow_unicode=True,
+                )
 
         return config
 
