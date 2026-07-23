@@ -3,6 +3,7 @@ Central logging utilities for AIPM.
 """
 
 from __future__ import annotations
+from aipm.storage import storage
 
 import logging
 from datetime import datetime
@@ -11,19 +12,9 @@ from pathlib import Path
 
 _LOGGERS: dict[str, logging.Logger] = {}
 
-
-def _log_directory() -> Path:
-    """
-    Return the AIPM log directory.
-
-    Example (Windows):
-        C:\\Users\\<user>\\.aipm\\logs
-    """
-
-    directory = Path.home() / ".aipm" / "logs"
-    directory.mkdir(parents=True, exist_ok=True)
-
-    return directory
+def _log_directory():
+    storage.initialize()
+    return storage.logs
 
 
 def _log_file() -> Path:
