@@ -4,6 +4,7 @@ import typer
 
 from aipm.commands.doctor import run as doctor
 from aipm.commands.version import run as version
+from aipm.commands import models
 
 app = typer.Typer(
     name="aipm",
@@ -11,7 +12,10 @@ app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
 )
-
+app.add_typer(
+    models.app,
+    name="models"
+)
 
 @app.command()
 def doctor() -> None:
