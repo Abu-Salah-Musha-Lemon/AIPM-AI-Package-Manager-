@@ -8,6 +8,7 @@ from pathlib import Path
 
 from aipm.config import load_config
 from aipm.logger import get_logger
+from aipm.models.metadata import ModelMetadata
 
 
 class ModelManager:
@@ -102,6 +103,36 @@ class ModelManager:
         """
 
         return self.path / name
+
+
+
+    def get_metadata(
+        self,
+        name: str,
+    ) -> ModelMetadata:
+        """
+        Generate model metadata.
+        """
+
+        path = self.get_path(name)
+
+        size = "Unknown"
+
+
+        if path.exists():
+
+            if path.is_file():
+
+                size = (
+                    f"{path.stat().st_size / (1024**3):.2f} GB"
+                )
+
+
+        return ModelMetadata(
+            name=name,
+            path=path,
+            size=size,
+        )
 
 
 
