@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aipm"
+version = "0.1.0-alpha.1"
+description = "Universal AI Package Manager"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+authors = [
+    { name = "Your Name" }
+]
+
+keywords = [
+    "ai",
+    "comfyui",
+    "stable-diffusion",
+    "flux",
+    "lora",
+    "package-manager"
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "typer>=0.16.0",
+    "rich>=14.0.0",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "PyYAML>=6.0.2",
+    "platformdirs>=4.3.8",
+    "packaging>=25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.7",
+    "basedpyright>=1.31.0",
+]
+
+[project.scripts]
+aipm = "aipm.cli:app"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
