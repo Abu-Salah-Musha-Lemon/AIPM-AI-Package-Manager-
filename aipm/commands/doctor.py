@@ -6,12 +6,19 @@ from rich.table import Table
 
 from aipm.config import load_config
 from aipm.utils.console import console
+from aipm.logger import get_logger
 
 
 def run() -> None:
     """Display basic environment information."""
 
+    log = get_logger(__name__)
+
+    log.info("Doctor command started")
+
     cfg = load_config()
+
+    log.info("Configuration loaded")
 
     table = Table(title="AIPM Doctor")
 
@@ -26,4 +33,4 @@ def run() -> None:
     table.add_row("Architecture", platform.machine())
     table.add_row("Storage", str(cfg.storage.root))
 
-    console.print(table)
+    # console.print(table)

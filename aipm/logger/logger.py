@@ -1,50 +1,86 @@
 """
-Logger Factory
-
-Provides a singleton logger instance for the application.
+Central logging utilities for AIPM.
 """
 
 from __future__ import annotations
 
 import logging
+from datetime import datetime
+from pathlib import Path
 
-_LOGGER: logging.Logger | None = None
+
+_LOGGERS: dict[str, logging.Logger] = {}
+
+
+def _log_directory() -> Path:
+    """
+    Return the AIPM log directory.
+
+    Example (Windows):
+        C:\\Users\\<user>\\.aipm\\logs
+    """
+
+    directory = Path.home() / ".aipm" / "logs"
+    directory.mkdir(parents=True, exist_ok=True)
+
+    return directory
+
+
+def _log_file() -> Path:
+    """
+    Return today's log file.
+    """
+
+    filename = datetime.now().strftime("%Y-%m-%d") + ".log"
+
+    return _log_directory() / filename
 
 
 def get_logger(name: str = "aipm") -> logging.Logger:
     """
-    Return the application logger.
-
-    Parameters
-    ----------
-    name : str
-        Logger name.
-
-    Returns
-    -------
-    logging.Logger
+    Return a configured logger instance.
     """
 
-    global _LOGGER
+    if name in _LOGGERS:
+        return _LOGGERS[name]
 
-    if _LOGGER is None:
-        logger = logging.getLogger(name)
-        logger.setLevel(logging.INFO)
+    logger = logging.getLogger(name)
 
-        if not logger.handlers:
-            handler = logging.StreamHandler()
+    logger.setLevel(logging.INFO)
 
-            formatter = logging.Formatter(
-                "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-                "%Y-%m-%d %H:%M:%S",
-            )
+    logger.propagate = False
 
-            handler.setFormatter(formatter)
+    if logger.handlers:
+        return logger
 
-            logger.addHandler(handler)
+    formatter = logging.Formatter(
+        fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
-        logger.propagate = False
+    #
+    # Console
+    #
 
-        _LOGGER = logger
+    console_handler = logging.StreamHandler()
 
-    return _LOGGER
+    console_handler.setFormatter(formatter)
+
+    logger.addHandler(console_handler)
+
+    #
+    # File
+    #
+
+    file_handler = logging.FileHandler(
+        _log_file(),
+        encoding="utf-8",
+    )
+
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+
+    _LOGGERS[name] = logger
+
+    return logger
