@@ -106,6 +106,76 @@ class ModelManager:
 
 
 
+    def calculate_size(
+        self,
+        path: Path,
+    ) -> int:
+        """
+        Calculate directory size in bytes.
+        """
+
+        total = 0
+
+        if not path.exists():
+            return total
+
+
+        if path.is_file():
+            return path.stat().st_size
+
+
+        for file in path.rglob("*"):
+
+            if file.is_file():
+
+                total += file.stat().st_size
+
+
+        return total
+
+
+
+    def detect_format(
+        self,
+        path: Path,
+    ) -> str:
+        """
+        Detect model file format.
+        """
+
+        formats = {
+            ".safetensors": "safetensors",
+            ".ckpt": "checkpoint",
+            ".pth": "pytorch",
+            ".pt": "pytorch",
+            ".bin": "binary",
+        }
+
+
+        if not path.exists():
+            return "unknown"
+
+
+        files = (
+            [path]
+            if path.is_file()
+            else path.rglob("*")
+        )
+
+
+        for file in files:
+
+            if file.suffix.lower() in formats:
+
+                return formats[
+                    file.suffix.lower()
+                ]
+
+
+        return "unknown"
+
+
+
     def get_metadata(
         self,
         name: str,
@@ -116,22 +186,24 @@ class ModelManager:
 
         path = self.get_path(name)
 
-        size = "Unknown"
+
+        size_bytes = self.calculate_size(
+            path
+        )
 
 
-        if path.exists():
-
-            if path.is_file():
-
-                size = (
-                    f"{path.stat().st_size / (1024**3):.2f} GB"
-                )
+        size = (
+            f"{size_bytes / (1024**3):.2f} GB"
+            if size_bytes
+            else "Unknown"
+        )
 
 
         return ModelMetadata(
             name=name,
             path=path,
             size=size,
+            format=self.detect_format(path),
         )
 
 
