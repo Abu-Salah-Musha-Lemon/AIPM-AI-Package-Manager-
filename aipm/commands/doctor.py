@@ -33,4 +33,8 @@ def run() -> None:
     table.add_row("Architecture", platform.machine())
     table.add_row("Storage", str(cfg.storage.root))
 
+    console.print(table)
+
+    log.info("Doctor completed successfully")
+
     # console.print(table)
