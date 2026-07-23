@@ -95,8 +95,33 @@ def run() -> None:
     )
 
     system_table.add_row(
-        "GPU",
+        "GPU Vendor",
+        system.gpu.vendor
+    )
+
+    system_table.add_row(
+        "GPU Name",
         system.gpu.name
+    )
+
+    system_table.add_row(
+        "GPU Memory",
+        system.gpu.memory
+    )
+
+    system_table.add_row(
+        "GPU Driver",
+        system.gpu.driver
+    )
+
+    system_table.add_row(
+        "CUDA Available",
+        str(system.gpu.cuda_available)
+    )
+
+    system_table.add_row(
+        "CUDA Version",
+        system.gpu.cuda_version
     )
 
     console.print(table)
