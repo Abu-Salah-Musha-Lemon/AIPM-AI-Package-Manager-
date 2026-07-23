@@ -8,7 +8,12 @@ from aipm.config import load_config
 from aipm.logger import get_logger
 from aipm.system.detector import detect_system
 from aipm.utils.console import console
-
+from aipm.storage import storage_manager
+from aipm.config import load_config
+from aipm.logger import get_logger
+from aipm.storage import storage_manager
+from aipm.system.detector import detect_system
+from aipm.utils.console import console
 
 def run() -> None:
     """Display basic environment information."""
@@ -21,9 +26,22 @@ def run() -> None:
 
     log.info("Configuration loaded")
 
+    storage_manager.initialize()
+
+    log.info(
+        "Storage initialization completed"
+    )
     system = detect_system()
 
-    log.info("System detection completed")
+    log.info(
+        "System detection completed"
+    )
+
+    storage_manager.initialize()
+
+    log.info(
+        "Storage initialization completed"
+    )
 
     table = Table(title="AIPM Doctor")
 
@@ -40,6 +58,19 @@ def run() -> None:
 
 
     system_table = Table(title="System Information")
+    storage_table = Table(
+    title="Storage Information"
+    )
+
+    storage_table.add_column(
+        "Directory",
+        style="cyan"
+    )
+
+    storage_table.add_column(
+        "Status",
+        style="green"
+    )
 
     system_table.add_column("Property", style="cyan")
     system_table.add_column("Value", style="green")
@@ -123,8 +154,29 @@ def run() -> None:
         "CUDA Version",
         system.gpu.cuda_version
     )
+    for name in [
+        "cache",
+        "models",
+        "loras",
+        "workflows",
+        "outputs",
+        "logs",
+    ]:
 
+        status = (
+            "Ready"
+            if storage_manager.exists(name)
+            else "Missing"
+        )
+
+        storage_table.add_row(
+            name.capitalize(),
+            status,
+        )
     console.print(table)
+
     console.print(system_table)
+
+    console.print(storage_table)
 
     log.info("Doctor completed successfully")

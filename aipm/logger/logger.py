@@ -3,7 +3,6 @@ Central logging utilities for AIPM.
 """
 
 from __future__ import annotations
-from aipm.storage import storage
 
 import logging
 from datetime import datetime
@@ -12,65 +11,96 @@ from pathlib import Path
 
 _LOGGERS: dict[str, logging.Logger] = {}
 
-def _log_directory():
-    storage.initialize()
-    return storage.logs
 
 
-def _log_file() -> Path:
+def _log_file(
+    log_directory: Path,
+) -> Path:
     """
     Return today's log file.
     """
 
-    filename = datetime.now().strftime("%Y-%m-%d") + ".log"
+    filename = (
+        datetime.now()
+        .strftime("%Y-%m-%d")
+        + ".log"
+    )
 
-    return _log_directory() / filename
+    return log_directory / filename
 
 
-def get_logger(name: str = "aipm") -> logging.Logger:
+
+def get_logger(
+    name: str = "aipm",
+    log_directory: Path | None = None,
+) -> logging.Logger:
     """
-    Return a configured logger instance.
+    Return configured logger.
     """
 
     if name in _LOGGERS:
         return _LOGGERS[name]
 
+
     logger = logging.getLogger(name)
 
-    logger.setLevel(logging.INFO)
+    logger.setLevel(
+        logging.INFO
+    )
 
     logger.propagate = False
 
-    if logger.handlers:
-        return logger
 
     formatter = logging.Formatter(
-        fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        fmt=(
+            "%(asctime)s | "
+            "%(levelname)-8s | "
+            "%(name)s | "
+            "%(message)s"
+        ),
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
+
     #
-    # Console
+    # Console Handler
     #
 
     console_handler = logging.StreamHandler()
 
-    console_handler.setFormatter(formatter)
-
-    logger.addHandler(console_handler)
-
-    #
-    # File
-    #
-
-    file_handler = logging.FileHandler(
-        _log_file(),
-        encoding="utf-8",
+    console_handler.setFormatter(
+        formatter
     )
 
-    file_handler.setFormatter(formatter)
+    logger.addHandler(
+        console_handler
+    )
 
-    logger.addHandler(file_handler)
+
+    #
+    # File Handler
+    #
+
+    if log_directory:
+
+        log_directory.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        file_handler = logging.FileHandler(
+            _log_file(log_directory),
+            encoding="utf-8",
+        )
+
+        file_handler.setFormatter(
+            formatter
+        )
+
+        logger.addHandler(
+            file_handler
+        )
+
 
     _LOGGERS[name] = logger
 

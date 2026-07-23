@@ -1,47 +1,99 @@
+"""
+Storage manager for AIPM.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
 
+from aipm.config import load_config
+from aipm.logger import get_logger
+
 
 class StorageManager:
     """
-    Central storage manager for AIPM.
-
-    All application directories are created automatically
-    under the user's home directory.
+    Manage AIPM storage directories.
     """
 
-    DIRECTORIES = (
-        "logs",
-        "models",
-        "loras",
-        "workflows",
-        "downloads",
-        "cache",
-        "plugins",
-        "temp",
-        "registry",
-        "providers",
-        "configs",
-        "backups",
-    )
+    def __init__(
+        self,
+        root: Path | None = None,
+    ) -> None:
 
-    def __init__(self) -> None:
-        self.root = Path.home() / ".aipm"
+        cfg = load_config()
 
-        for directory in self.DIRECTORIES:
-            setattr(self, directory, self.root / directory)
+        self.log = get_logger(
+            __name__,
+            cfg.storage.logs,
+        )
+
+        self.root = (
+            root
+            if root
+            else cfg.storage.root
+        )
+
+        self.directories = {
+            "cache": cfg.storage.cache,
+            "models": cfg.storage.models,
+            "loras": cfg.storage.loras,
+            "workflows": cfg.storage.workflows,
+            "outputs": cfg.storage.outputs,
+            "logs": cfg.storage.logs,
+        }
+
 
     def initialize(self) -> None:
-        """Create all required directories."""
+        """
+        Create required storage folders.
+        """
 
-        self.root.mkdir(parents=True, exist_ok=True)
+        self.root.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
-        for directory in self.DIRECTORIES:
-            getattr(self, directory).mkdir(
+        self.log.info(
+            "Initializing AIPM storage"
+        )
+
+        for name, path in self.directories.items():
+
+            path.mkdir(
                 parents=True,
                 exist_ok=True,
             )
 
+            self.log.info(
+                "Storage initialized: %s",
+                name,
+            )
 
-storage = StorageManager()
+
+    def exists(
+        self,
+        name: str,
+    ) -> bool:
+        """
+        Check storage directory exists.
+        """
+
+        if name not in self.directories:
+            return False
+
+        return self.directories[name].exists()
+
+
+    def get_path(
+        self,
+        name: str,
+    ) -> Path | None:
+        """
+        Return storage path.
+        """
+
+        return self.directories.get(name)
+
+
+
+storage_manager = StorageManager()
