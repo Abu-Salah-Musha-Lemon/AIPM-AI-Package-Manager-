@@ -5,10 +5,9 @@ import platform
 from rich.table import Table
 
 from aipm.config import load_config
+from aipm.utils.console import console
 from aipm.logger import get_logger
 from aipm.system.detector import detect_system
-from aipm.utils.console import console
-
 
 def run() -> None:
     """Display basic environment information."""
@@ -38,11 +37,18 @@ def run() -> None:
     table.add_row("Architecture", platform.machine())
     table.add_row("Storage", str(cfg.storage.root))
 
-
     system_table = Table(title="System Information")
 
-    system_table.add_column("Property", style="cyan")
-    system_table.add_column("Value", style="green")
+    system_table.add_column(
+        "Property",
+        style="cyan"
+    )
+
+    system_table.add_column(
+        "Value",
+        style="green"
+    )
+
 
     system_table.add_row(
         "Operating System",
@@ -75,18 +81,8 @@ def run() -> None:
     )
 
     system_table.add_row(
-        "CPU Threads",
-        str(system.cpu.threads)
-    )
-
-    system_table.add_row(
         "RAM",
         system.memory.total
-    )
-
-    system_table.add_row(
-        "Available RAM",
-        system.memory.available
     )
 
     system_table.add_row(
@@ -101,5 +97,4 @@ def run() -> None:
 
     console.print(table)
     console.print(system_table)
-
     log.info("Doctor completed successfully")
