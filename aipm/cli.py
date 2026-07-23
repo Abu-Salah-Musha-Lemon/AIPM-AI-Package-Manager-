@@ -14,17 +14,17 @@ app = typer.Typer(
 
 
 @app.command()
-def doctor_cmd() -> None:
+def doctor() -> None:
     """Check system information."""
-
-    doctor()
+    from aipm.commands.doctor import run
+    run()
 
 
 @app.command()
-def version_cmd() -> None:
+def version() -> None:
     """Show application version."""
-
-    version()
+    from aipm.commands.version import run
+    run()
 
 
 @app.callback(invoke_without_command=True)
