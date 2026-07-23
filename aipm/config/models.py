@@ -1,31 +1,60 @@
+from __future__ import annotations
+
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AppConfig(BaseModel):
-    name: str
-    version: str
+    """
+    Application metadata configuration.
+    """
+
+    name: str = "AIPM"
+    version: str = "0.1.0-alpha.1"
 
 
 class StorageConfig(BaseModel):
-    root: Path
-    cache: Path
-    models: Path
-    loras: Path
-    workflows: Path
-    outputs: Path
-    logs: Path
+    """
+    Application storage configuration.
+    """
+
+    root: Path = Field(
+        default_factory=lambda: Path.home() / ".aipm"
+    )
+
+    cache: Path | None = None
+    models: Path | None = None
+    loras: Path | None = None
+    workflows: Path | None = None
+    outputs: Path | None = None
+    logs: Path | None = None
 
 
 class DownloadConfig(BaseModel):
-    workers: int
-    timeout: int
-    retries: int
-    verify_sha256: bool
+    """
+    Download engine configuration.
+    """
+
+    workers: int = 4
+    timeout: int = 60
+    retries: int = 3
+    verify_sha256: bool = True
 
 
 class Config(BaseModel):
-    app: AppConfig
-    storage: StorageConfig
-    download: DownloadConfig
+    """
+    Root AIPM configuration model.
+    """
+
+    app: AppConfig = Field(
+        default_factory=AppConfig
+    )
+
+    storage: StorageConfig = Field(
+        default_factory=StorageConfig
+    )
+
+    download: DownloadConfig = Field(
+        default_factory=DownloadConfig
+    )

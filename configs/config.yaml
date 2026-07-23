@@ -1,18 +1,16 @@
 app:
   name: AIPM
   version: 0.1.0-alpha.1
-
 storage:
-  root: ~/.aipm
-  cache: ~/.aipm/cache
-  models: ~/.aipm/models
-  loras: ~/.aipm/loras
-  workflows: ~/.aipm/workflows
-  outputs: ~/.aipm/outputs
-  logs: ~/.aipm/logs
-
+  root: C:\Users\srleo\.aipm
+  cache: C:\Users\srleo\.aipm\cache
+  models: C:\Users\srleo\.aipm\models
+  loras: C:\Users\srleo\.aipm\loras
+  workflows: C:\Users\srleo\.aipm\workflows
+  outputs: C:\Users\srleo\.aipm\outputs
+  logs: C:\Users\srleo\.aipm\logs
 download:
-  workers: 8
-  timeout: 300
+  workers: 4
+  timeout: 60
   retries: 3
   verify_sha256: true

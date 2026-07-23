@@ -1,19 +1,40 @@
+"""
+Configuration loader for AIPM.
+"""
+
+from __future__ import annotations
+
 from pathlib import Path
 
 import yaml
 
+from aipm.config.defaults import create_default_config
 from aipm.config.models import Config
-from aipm.config.settings import expand
 
-CONFIG_FILE = Path("configs/config.yaml")
+
+CONFIG_PATH = (
+    Path(__file__).resolve()
+    .parents[2]
+    / "configs"
+    / "config.yaml"
+)
 
 
 def load_config() -> Config:
+    """
+    Load AIPM configuration.
 
-    with CONFIG_FILE.open("r", encoding="utf-8") as file:
-        data = yaml.safe_load(file)
+    If configuration file does not exist,
+    default configuration will be returned.
+    """
 
-    for key, value in data["storage"].items():
-        data["storage"][key] = str(expand(value))
+    if not CONFIG_PATH.exists():
+        return create_default_config()
 
-    return Config.model_validate(data)
+    with CONFIG_PATH.open(
+        "r",
+        encoding="utf-8",
+    ) as file:
+        data = yaml.safe_load(file) or {}
+
+    return Config(**data)
