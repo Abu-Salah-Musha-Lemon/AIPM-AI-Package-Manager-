@@ -18,7 +18,6 @@ app = typer.Typer(
 )
 
 
-
 @app.command("list")
 def list_models():
     """
@@ -30,26 +29,6 @@ def list_models():
     models = model_manager.list_models()
 
 
-    table = Table(
-        title="Installed Models"
-    )
-
-    table.add_column(
-        "Name",
-        style="cyan"
-    )
-
-    table.add_column(
-        "Format",
-        style="green"
-    )
-
-    table.add_column(
-        "Size",
-        style="yellow"
-    )
-
-
     if not models:
 
         console.print(
@@ -59,6 +38,36 @@ def list_models():
         return
 
 
+    table = Table(
+        title="Installed Models"
+    )
+
+
+    table.add_column(
+        "Name",
+        style="cyan"
+    )
+
+    table.add_column(
+        "Type",
+        style="green"
+    )
+
+    table.add_column(
+        "Architecture",
+        style="green"
+    )
+
+    table.add_column(
+        "Format",
+        style="yellow"
+    )
+
+    table.add_column(
+        "Size",
+        style="magenta"
+    )
+
 
     for model in models:
 
@@ -67,14 +76,13 @@ def list_models():
             .get_metadata(model)
         )
 
-        table.add_row(
-            "Type",
-            info.type
-        )
 
         table.add_row(
-            "Architecture",
-            info.architecture
+            info.name,
+            info.type,
+            info.architecture,
+            info.format,
+            info.size,
         )
 
 
@@ -128,6 +136,21 @@ def info(
     )
 
     table.add_row(
+        "Type",
+        info.type
+    )
+
+    table.add_row(
+        "Architecture",
+        info.architecture
+    )
+
+    table.add_row(
+        "Framework",
+        info.framework
+    )
+
+    table.add_row(
         "Format",
         info.format
     )
@@ -135,6 +158,11 @@ def info(
     table.add_row(
         "Size",
         info.size
+    )
+
+    table.add_row(
+        "Source",
+        info.source
     )
 
     table.add_row(

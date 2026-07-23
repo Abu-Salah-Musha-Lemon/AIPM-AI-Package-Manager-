@@ -9,7 +9,7 @@ from pathlib import Path
 from aipm.config import load_config
 from aipm.logger import get_logger
 from aipm.models.metadata import ModelMetadata
-
+from aipm.models.metadata_loader import load_model_metadata
 
 class ModelManager:
     """
@@ -186,6 +186,9 @@ class ModelManager:
 
         path = self.get_path(name)
 
+        metadata = load_model_metadata(
+            path
+        )
 
         size_bytes = self.calculate_size(
             path
@@ -200,13 +203,37 @@ class ModelManager:
 
 
         return ModelMetadata(
-              name=name,
-              path=path,
-              size=size,
-              format=self.detect_format(path),
-              type=self.detect_type(path),
-              architecture=self.detect_architecture(path),
-          )
+        name=metadata.get(
+            "name",
+            name,
+        ),
+
+        type=metadata.get(
+            "type",
+            self.detect_type(path),
+        ),
+
+        architecture=metadata.get(
+            "architecture",
+            self.detect_architecture(path),
+        ),
+
+        framework=metadata.get(
+            "framework",
+            "unknown",
+        ),
+
+        format=self.detect_format(path),
+
+        size=size,
+
+        source=metadata.get(
+            "source",
+            "unknown",
+        ),
+
+        path=path,
+    )
     
     def detect_type(
     self,
