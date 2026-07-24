@@ -5,6 +5,7 @@ Cache manager.
 from __future__ import annotations
 
 from pathlib import Path
+from aipm.logger import get_logger
 
 import json
 
@@ -80,6 +81,36 @@ class CacheManager:
                 return item
 
         return None
+    def remove(
+        self,
+        name: str,
+    ) -> bool:
+        """
+        Remove a model from cache.
+        """
 
+        cache = self.load()
+
+        original_count = len(cache.models)
+
+        cache.models = [
+            model
+            for model in cache.models
+            if model.name.lower() != name.lower()
+        ]
+
+        if len(cache.models) == original_count:
+            self.log.info(
+                f"Cache entry not found: {name}"
+            )
+            return False
+
+        self.save(cache)
+
+        self.log.info(
+            f"Removed cache entry: {name}"
+        )
+
+        return True
 
 cache_manager = CacheManager()
