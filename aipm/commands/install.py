@@ -23,6 +23,7 @@ def run(name: str) -> None:
     path = download_manager.download(
         model.name,
         model.url,
+        model.sha256,
     )
 
     console.print("[green]Installed successfully[/green]")

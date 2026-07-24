@@ -9,7 +9,7 @@ from pathlib import Path
 from aipm.config import load_config
 from aipm.download.downloader import download_file
 from aipm.logger import get_logger
-
+from aipm.utils.hash import sha256_file
 
 class DownloadManager:
     """
@@ -27,6 +27,7 @@ class DownloadManager:
         self,
         name: str,
         url: str,
+        sha256: str = "",
     ) -> Path:
         """
         Download a model file.
@@ -54,13 +55,50 @@ class DownloadManager:
         download_file(
             url=url,
             destination=target,
+            resume=True,
         )
 
         self.log.info(
             "Download completed"
         )
 
-        return target
+        if sha256:
 
+                self.log.info(
+                    "Verifying SHA256..."
+                )
+
+                if not self.verify(
+                    target,
+                    sha256,
+                ):
+
+                    target.unlink(
+                        missing_ok=True,
+                    )
+
+                    raise ValueError(
+                        "SHA256 verification failed."
+                    )
+
+        return target
+    def verify(
+        self,
+        file: Path,
+        expected: str,
+    ) -> bool:
+        """
+        Verify SHA256 checksum.
+        """
+
+        if not expected:
+            return True
+
+        actual = sha256_file(file)
+
+        return (
+            actual.lower()
+            == expected.lower()
+        )
 
 download_manager = DownloadManager()
