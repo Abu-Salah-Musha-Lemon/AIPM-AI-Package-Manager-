@@ -11,6 +11,7 @@ from aipm.commands import verify
 from aipm.commands import remove
 from aipm.commands import repair
 from aipm.commands import upgrade
+from aipm.commands import update
 
 app = typer.Typer(
     help="Universal AI Package Manager"
@@ -52,6 +53,10 @@ app.add_typer(
     name="upgrade",
 )
 
+app.add_typer(
+    update.app,
+    name="update",
+)
 
 
 @app.command("install")

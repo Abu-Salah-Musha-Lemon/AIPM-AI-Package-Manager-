@@ -139,6 +139,10 @@ class UpdateManager:
             f"Updating {installed_version} -> {latest_version}"
         )
 
+        #
+        # Download latest version
+        #
+
         try:
 
             download_manager.download(
@@ -168,28 +172,41 @@ class UpdateManager:
             name
         )
 
-        if verified:
+        if not verified:
 
-            self.log.info(
-                "Update completed successfully."
+            self.log.error(
+                "Verification failed."
             )
 
             return UpdateResult(
-                status=UpdateStatus.UPDATED,
+                status=UpdateStatus.FAILED,
                 old_version=installed_version,
                 new_version=latest_version,
-                message="Updated successfully.",
+                message="Verification failed.",
             )
 
-        self.log.error(
-            "Verification failed."
+        #
+        # Update metadata
+        #
+
+        model_manager.update_metadata(
+            name=name,
+            version=latest_version,
+        )
+
+        self.log.info(
+            "Metadata updated."
+        )
+
+        self.log.info(
+            "Update completed successfully."
         )
 
         return UpdateResult(
-            status=UpdateStatus.FAILED,
+            status=UpdateStatus.UPDATED,
             old_version=installed_version,
             new_version=latest_version,
-            message="Verification failed.",
+            message="Updated successfully.",
         )
 
 

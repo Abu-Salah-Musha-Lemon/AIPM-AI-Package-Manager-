@@ -319,6 +319,58 @@ class ModelManager:
 
         return "unknown"
 
+    def update_metadata(
+        self,
+        name: str,
+        version: str,
+    ) -> bool:
+        """
+        Update installed model metadata.
+        """
+
+        import yaml
+
+        model_dir = self.get_path(
+            name
+        )
+
+        metadata_file = (
+            model_dir / "metadata.yaml"
+        )
+
+        if not metadata_file.exists():
+
+            return False
+
+        with metadata_file.open(
+            "r",
+            encoding="utf-8",
+        ) as file:
+
+            metadata = (
+                yaml.safe_load(file)
+                or {}
+            )
+
+        metadata["version"] = version
+
+        with metadata_file.open(
+            "w",
+            encoding="utf-8",
+        ) as file:
+
+            yaml.safe_dump(
+                metadata,
+                file,
+                sort_keys=False,
+                allow_unicode=True,
+            )
+
+        self.log.info(
+            f"Updated metadata: {name} -> {version}"
+        )
+
+        return True
 
 
 model_manager = ModelManager()
