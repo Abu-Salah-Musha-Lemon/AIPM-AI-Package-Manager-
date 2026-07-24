@@ -30,24 +30,20 @@ def model(
     """
 
     console.print(
-        f"Downloading model: {name}"
+        f"[bold cyan]Downloading model:[/bold cyan] {name}"
     )
 
-
-    path = (
-        download_manager
-        .download(
-            name,
-            url,
-        )
+    path = download_manager.download(
+        name=name,
+        url=url,
     )
 
+    console.print()
 
     console.print(
-        "Download completed"
+        "[bold green]✓ Model is ready[/bold green]"
     )
 
-
     console.print(
-        f"Saved at: {path}"
+        f"[cyan]Location:[/cyan] {path}"
     )

@@ -8,8 +8,13 @@ from pathlib import Path
 
 from aipm.config import load_config
 from aipm.download.downloader import download_file
+from aipm.download.hash import calculate_sha256
 from aipm.logger import get_logger
 from aipm.utils.hash import sha256_file
+
+from aipm.cache import cache_manager
+from aipm.cache.models import CacheEntry
+
 
 class DownloadManager:
     """
@@ -17,6 +22,7 @@ class DownloadManager:
     """
 
     def __init__(self) -> None:
+
         cfg = load_config()
 
         self.log = get_logger(__name__)
@@ -33,6 +39,27 @@ class DownloadManager:
         Download a model file.
         """
 
+        #
+        # Check cache
+        #
+
+        cached = cache_manager.get(name)
+
+        if (
+            cached
+            and Path(cached.path).exists()
+        ):
+
+            self.log.info(
+                "Using cached model."
+            )
+
+            return Path(cached.path)
+
+        #
+        # Create model directory
+        #
+
         model_dir = self.models / name
 
         model_dir.mkdir(
@@ -41,9 +68,7 @@ class DownloadManager:
         )
 
         #
-        # TODO:
-        # Future commits will detect the filename
-        # automatically from the URL or headers.
+        # Destination file
         #
 
         target = model_dir / "model.bin"
@@ -62,26 +87,53 @@ class DownloadManager:
             "Download completed"
         )
 
+        #
+        # Verify SHA256
+        #
+
         if sha256:
 
-                self.log.info(
-                    "Verifying SHA256..."
+            self.log.info(
+                "Verifying SHA256..."
+            )
+
+            if not self.verify(
+                target,
+                sha256,
+            ):
+
+                target.unlink(
+                    missing_ok=True,
                 )
 
-                if not self.verify(
-                    target,
-                    sha256,
-                ):
+                raise ValueError(
+                    "SHA256 verification failed."
+                )
 
-                    target.unlink(
-                        missing_ok=True,
-                    )
+        #
+        # Save cache
+        #
 
-                    raise ValueError(
-                        "SHA256 verification failed."
-                    )
+        cache_manager.add(
+
+            CacheEntry(
+
+                name=name,
+
+                sha256=calculate_sha256(
+                    target
+                ),
+
+                size=target.stat().st_size,
+
+                path=str(target),
+
+            )
+
+        )
 
         return target
+
     def verify(
         self,
         file: Path,
@@ -100,5 +152,6 @@ class DownloadManager:
             actual.lower()
             == expected.lower()
         )
+
 
 download_manager = DownloadManager()
