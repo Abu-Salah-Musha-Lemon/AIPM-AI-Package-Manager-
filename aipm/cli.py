@@ -8,6 +8,7 @@ from aipm.commands import registry
 from aipm.commands import install
 from aipm.commands.install import run as install_run
 from aipm.commands import verify
+from aipm.commands import remove
 
 app = typer.Typer(
     help="Universal AI Package Manager"
@@ -34,6 +35,10 @@ app.add_typer(
 app.add_typer(
     registry.app,
     name="registry",
+)
+app.add_typer(
+    remove.app,
+    name="remove",
 )
 
 
