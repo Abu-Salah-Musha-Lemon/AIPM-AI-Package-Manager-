@@ -6,7 +6,7 @@ models:
     framework: diffusers
     format: safetensors
     size: "23GB"
-    sha256: "abc123"
+    sha256: 
     url: https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
     description: FLUX Development Model
 
@@ -17,6 +17,6 @@ models:
     framework: none
     format: txt
     size: Unknown
-    sha256: "abc123"
+    sha256: ""
     url: https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
     description: Test download
