@@ -10,7 +10,9 @@ from aipm.registry import registry_manager
 from aipm.models import model_manager
 from aipm.download import download_manager
 from aipm.verify import verify_manager
-
+from aipm.utils.version import (
+    compare_versions,
+)
 
 class UpdateManager:
     """
@@ -79,13 +81,28 @@ class UpdateManager:
             registry_model.version
         )
 
-        if installed.version == registry_model.version:
-    
+
+        result = compare_versions(
+            installed_version,
+            latest_version,
+        )
+
+        if result == 0:
+
             self.log.info(
-                "Already up-to-date."
+                f"Updating {installed_version} -> {latest_version}"
             )
 
             return True
+
+        if result > 0:
+
+            self.log.warning(
+                "Installed version is newer than registry."
+            )
+
+            return True
+
 
         #
         # Download latest
