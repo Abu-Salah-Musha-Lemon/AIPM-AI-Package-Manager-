@@ -13,7 +13,7 @@ build/
 *.egg-info/
 
 logs/
-cache/
+# cache/
 outputs/
 
 .env
