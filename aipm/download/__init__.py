@@ -1,7 +1,7 @@
 """
 Download system for AIPM.
 """
-
+from .manager import DownloadManager, download_manager
 from .manager import DownloadManager
 
 download_manager = DownloadManager()

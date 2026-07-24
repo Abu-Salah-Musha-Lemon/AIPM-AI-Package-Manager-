@@ -4,6 +4,9 @@ import typer
 
 from aipm.commands import models
 from aipm.commands import download
+from aipm.commands import registry
+from aipm.commands import install
+from aipm.commands.install import run as install_run
 
 app = typer.Typer(
     help="Universal AI Package Manager"
@@ -22,6 +25,21 @@ app.add_typer(
     download.app,
     name="download",
 )
+
+app.add_typer(
+    registry.app,
+    name="registry",
+)
+
+@app.command("install")
+def install(
+    name: str,
+) -> None:
+    """
+    Install AI model.
+    """
+
+    install_run(name)
 
 #
 # Single Commands
