@@ -24,6 +24,7 @@ class RepairManager:
     def repair(
         self,
         name: str,
+        progress: bool = False,
     ) -> bool:
         """
         Repair a model.
@@ -35,19 +36,38 @@ class RepairManager:
 
         model = registry_manager.get(name)
 
+        if progress:
+            self.log.info(
+                "Checking registry..."
+            )
+
+        model = registry_manager.get(name)
+
         if model is None:
 
             self.log.error(
-                f"Registry entry not found: {name}"
+                "Registry entry not found."
             )
 
             return False
+
+        if progress:
+            self.log.info(
+                "Registry OK"
+            )
 
         #
         # Verify model
         #
 
-        if verify_manager.verify(name):
+        if progress:
+            self.log.info(
+                "Verifying installation..."
+            )
+
+        healthy = verify_manager.verify(name)
+
+        if healthy:
 
             self.log.info(
                 "Model is healthy."
@@ -60,7 +80,7 @@ class RepairManager:
         #
 
         self.log.warning(
-            "Removing broken model..."
+            "Removing corrupted model..."
         )
 
         remove_manager.remove(name)
@@ -70,7 +90,7 @@ class RepairManager:
         #
 
         self.log.info(
-            "Downloading model..."
+            "Downloading latest  model..."
         )
 
         download_manager.download(
@@ -83,7 +103,25 @@ class RepairManager:
         # Final verification
         #
 
-        return verify_manager.verify(name)
+        self.log.info(
+            "Running final verification..."
+        )
+
+        result = verify_manager.verify(name)
+
+        if result:
+
+            self.log.info(
+                "Repair completed."
+            )
+
+        else:
+
+            self.log.error(
+                "Repair failed."
+            )
+
+        return result
 
 
 repair_manager = RepairManager()

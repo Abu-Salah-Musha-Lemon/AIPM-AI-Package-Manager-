@@ -29,7 +29,8 @@ def model(
     )
 
     success = repair_manager.repair(
-        name
+        name=name,
+        progress=True,
     )
 
     if success:
