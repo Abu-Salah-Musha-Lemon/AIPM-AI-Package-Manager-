@@ -16,6 +16,8 @@ class ModelMetadata(BaseModel):
 
     name: str
 
+    version: str = "0.0"
+
     type: str = "unknown"
 
     architecture: str = "unknown"

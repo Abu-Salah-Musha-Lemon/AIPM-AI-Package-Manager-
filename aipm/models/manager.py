@@ -208,6 +208,11 @@ class ModelManager:
             name,
         ),
 
+        version=metadata.get(
+            "version",
+            "0.0",
+        ),
+
         type=metadata.get(
             "type",
             self.detect_type(path),

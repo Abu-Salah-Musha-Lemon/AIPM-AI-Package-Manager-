@@ -73,21 +73,14 @@ class UpdateManager:
         # Compare version
         #
 
-        installed_version = getattr(
-            installed,
-            "version",
-            "0.0",
-        )
+        installed_version = installed.version
 
         latest_version = (
             registry_model.version
         )
 
-        if (
-            installed_version
-            == latest_version
-        ):
-
+        if installed.version == registry_model.version:
+    
             self.log.info(
                 "Already up-to-date."
             )
