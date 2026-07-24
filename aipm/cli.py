@@ -9,6 +9,7 @@ from aipm.commands import install
 from aipm.commands.install import run as install_run
 from aipm.commands import verify
 from aipm.commands import remove
+from aipm.commands import repair
 
 app = typer.Typer(
     help="Universal AI Package Manager"
@@ -40,7 +41,10 @@ app.add_typer(
     remove.app,
     name="remove",
 )
-
+app.add_typer(
+    repair.app,
+    name="repair",
+)
 
 @app.command("install")
 def install(
