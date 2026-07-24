@@ -7,6 +7,7 @@ from aipm.commands import download
 from aipm.commands import registry
 from aipm.commands import install
 from aipm.commands.install import run as install_run
+from aipm.commands import verify
 
 app = typer.Typer(
     help="Universal AI Package Manager"
@@ -25,11 +26,16 @@ app.add_typer(
     download.app,
     name="download",
 )
+app.add_typer(
+    verify.app,
+    name="verify",
+)
 
 app.add_typer(
     registry.app,
     name="registry",
 )
+
 
 @app.command("install")
 def install(
