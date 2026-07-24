@@ -10,9 +10,14 @@ from aipm.registry import registry_manager
 from aipm.models import model_manager
 from aipm.download import download_manager
 from aipm.verify import verify_manager
-from aipm.utils.version import (
-    compare_versions,
+
+from aipm.utils.version import compare_versions
+
+from aipm.update.models import (
+    UpdateResult,
+    UpdateStatus,
 )
+
 
 class UpdateManager:
     """
@@ -28,9 +33,9 @@ class UpdateManager:
     def update(
         self,
         name: str,
-    ) -> bool:
+    ) -> UpdateResult:
         """
-        Update an installed model.
+        Update an installed AI model.
         """
 
         #
@@ -47,7 +52,10 @@ class UpdateManager:
                 "Registry entry not found."
             )
 
-            return False
+            return UpdateResult(
+                status=UpdateStatus.FAILED,
+                message="Registry entry not found.",
+            )
 
         #
         # Check installation
@@ -61,7 +69,10 @@ class UpdateManager:
                 "Model is not installed."
             )
 
-            return False
+            return UpdateResult(
+                status=UpdateStatus.FAILED,
+                message="Model is not installed.",
+            )
 
         #
         # Installed metadata
@@ -71,59 +82,114 @@ class UpdateManager:
             name
         )
 
-        #
-        # Compare version
-        #
-
         installed_version = installed.version
 
         latest_version = (
             registry_model.version
         )
 
+        #
+        # Compare versions
+        #
 
-        result = compare_versions(
+        comparison = compare_versions(
             installed_version,
             latest_version,
         )
 
-        if result == 0:
+        #
+        # Already latest
+        #
+
+        if comparison == 0:
 
             self.log.info(
-                f"Updating {installed_version} -> {latest_version}"
+                "Already up-to-date."
             )
 
-            return True
+            return UpdateResult(
+                status=UpdateStatus.SKIPPED,
+                old_version=installed_version,
+                new_version=latest_version,
+                message="Already up-to-date.",
+            )
 
-        if result > 0:
+        #
+        # Installed newer than registry
+        #
+
+        if comparison > 0:
 
             self.log.warning(
                 "Installed version is newer than registry."
             )
 
-            return True
-
+            return UpdateResult(
+                status=UpdateStatus.SKIPPED,
+                old_version=installed_version,
+                new_version=latest_version,
+                message="Installed version is newer.",
+            )
 
         #
-        # Download latest
+        # Update required
         #
 
         self.log.info(
             f"Updating {installed_version} -> {latest_version}"
         )
 
-        download_manager.download(
-            name=name,
-            url=registry_model.url,
-            sha256=registry_model.sha256,
+        try:
+
+            download_manager.download(
+                name=name,
+                url=registry_model.url,
+                sha256=registry_model.sha256,
+            )
+
+        except Exception as error:
+
+            self.log.error(
+                str(error)
+            )
+
+            return UpdateResult(
+                status=UpdateStatus.FAILED,
+                old_version=installed_version,
+                new_version=latest_version,
+                message=str(error),
+            )
+
+        #
+        # Verify installation
+        #
+
+        verified = verify_manager.verify(
+            name
         )
 
-        #
-        # Verify
-        #
+        if verified:
 
-        return verify_manager.verify(
-            name
+            self.log.info(
+                "Update completed successfully."
+            )
+
+            return UpdateResult(
+                status=UpdateStatus.UPDATED,
+                old_version=installed_version,
+                new_version=latest_version,
+                message="Updated successfully.",
+            )
+
+        self.log.error(
+            "Verification failed."
+        )
+
+        return UpdateResult(
+            status=UpdateStatus.FAILED,
+            old_version=installed_version,
+            new_version=latest_version,
+            message="Verification failed.",
         )
 
 
