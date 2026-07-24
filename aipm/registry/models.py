@@ -4,7 +4,10 @@ Registry models.
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import (
+    BaseModel,
+    Field,
+)
 
 
 class RegistryEntry(BaseModel):
@@ -13,15 +16,24 @@ class RegistryEntry(BaseModel):
     """
 
     name: str
+
     version: str
+
     architecture: str
+
     type: str
+
     framework: str
+
     format: str
-    size: str
-    sha256: str
+
+    size: str = "Unknown"
+
+    sha256: str | None = None
+
     url: str
-    description: str
+
+    description: str = ""
 
 
 class Registry(BaseModel):
@@ -29,4 +41,6 @@ class Registry(BaseModel):
     Registry database.
     """
 
-    models: list[RegistryEntry]
+    models: list[RegistryEntry] = Field(
+        default_factory=list
+    )
