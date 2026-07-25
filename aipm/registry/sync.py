@@ -10,6 +10,9 @@ import requests
 
 from aipm.config import load_config
 from aipm.logger import get_logger
+import yaml
+
+from aipm.registry.models import Registry
 
 
 class RegistrySync:
@@ -63,6 +66,36 @@ class RegistrySync:
             response.text,
             encoding="utf-8",
         )
+        #
+        # Validate downloaded registry
+        #
+
+        try:
+
+            with self.temp.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+
+                data = yaml.safe_load(file) or {}
+
+            Registry.model_validate(
+                data
+            )
+
+        except Exception as error:
+
+            # self.temp.unlink(
+            #     missing_ok=True,
+            # )
+
+            content_type = response.headers.get("Content-Type", "")
+
+            if "text/html" in content_type.lower():
+                raise RuntimeError(
+                    "Registry URL returned HTML instead of registry.yaml. "
+                    "Use a raw.githubusercontent.com URL."
+                )
 
         self.log.info(
             "Registry synchronized."

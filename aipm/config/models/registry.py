@@ -9,7 +9,7 @@ class RegistryConfig(BaseModel):
     """
 
     url: str = (
-        "https://github.com/Abu-Salah-Musha-Lemon/aipm-registry/blob/main/registry.yaml"
+        "https://raw.githubusercontent.com/Abu-Salah-Musha-Lemon/aipm-registry/main/registry.yaml"
     )
 
     timeout: int = 30
