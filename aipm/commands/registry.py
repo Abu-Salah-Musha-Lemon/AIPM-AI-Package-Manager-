@@ -7,7 +7,11 @@ from __future__ import annotations
 import typer
 from rich.table import Table
 
-from aipm.registry import registry_manager
+from aipm.registry import (
+    registry_manager,
+    registry_sync,
+)
+
 from aipm.utils.console import console
 
 app = typer.Typer(
@@ -209,3 +213,29 @@ def search(
         )
 
     console.print(table)
+
+@app.command()
+def sync() -> None:
+    """
+    Synchronize local registry with remote registry.
+    """
+
+    try:
+
+        size = registry_sync.sync()
+
+    except Exception as error:
+
+        console.print(
+            f"[bold red]Registry sync failed:[/bold red] {error}"
+        )
+
+        raise typer.Exit(code=1)
+
+    console.print(
+        "[bold green]Registry synchronized successfully.[/bold green]"
+    )
+
+    console.print(
+        f"Downloaded {size} bytes."
+    )

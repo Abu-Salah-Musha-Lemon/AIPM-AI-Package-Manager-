@@ -46,8 +46,7 @@ class RegistryConfig(BaseModel):
     """
 
     url: str = (
-        "https://raw.githubusercontent.com/"
-        "<your-username>/aipm-registry/main/registry.yaml"
+        "https://github.com/Abu-Salah-Musha-Lemon/aipm-registry/blob/main/registry.yaml"
     )
 
     timeout: int = 30
