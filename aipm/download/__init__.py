@@ -5,6 +5,14 @@ from .manager import DownloadManager, download_manager
 from .manager import DownloadManager
 from .manager import download_manager
 from .hash import calculate_sha256
+from .models import (
+    DownloadResult,
+    DownloadStatus,
+)
+
+from .manager import (
+    download_manager,
+)
 
 download_manager = DownloadManager()
 

@@ -6,14 +6,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from aipm.config import load_config
-from aipm.download.downloader import download_file
-from aipm.download.hash import calculate_sha256
-from aipm.logger import get_logger
-from aipm.utils.hash import sha256_file
-
 from aipm.cache import cache_manager
 from aipm.cache.models import CacheEntry
+from aipm.config import load_config
+from aipm.download.downloader import downloader
+from aipm.download.hash import calculate_sha256
+from aipm.download.models import DownloadStatus
+from aipm.logger import get_logger
+from aipm.utils.hash import sha256_file
 
 
 class DownloadManager:
@@ -54,13 +54,17 @@ class DownloadManager:
                 "Using cached model."
             )
 
-            return Path(cached.path)
+            return Path(
+                cached.path
+            )
 
         #
         # Create model directory
         #
 
-        model_dir = self.models / name
+        model_dir = (
+            self.models / name
+        )
 
         model_dir.mkdir(
             parents=True,
@@ -71,20 +75,32 @@ class DownloadManager:
         # Destination file
         #
 
-        target = model_dir / "model.bin"
+        target = (
+            model_dir
+            / "model.bin"
+        )
 
         self.log.info(
             f"Downloading {name}"
         )
 
-        download_file(
+        result = downloader.download(
             url=url,
             destination=target,
             resume=True,
         )
 
+        if (
+            result.status
+            != DownloadStatus.SUCCESS
+        ):
+
+            raise RuntimeError(
+                result.message
+            )
+
         self.log.info(
-            "Download completed"
+            "Download completed."
         )
 
         #
@@ -126,7 +142,9 @@ class DownloadManager:
 
                 size=target.stat().st_size,
 
-                path=str(target),
+                path=str(
+                    target
+                ),
 
             )
 
@@ -146,7 +164,9 @@ class DownloadManager:
         if not expected:
             return True
 
-        actual = sha256_file(file)
+        actual = sha256_file(
+            file
+        )
 
         return (
             actual.lower()

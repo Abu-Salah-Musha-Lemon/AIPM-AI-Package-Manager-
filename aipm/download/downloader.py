@@ -4,149 +4,253 @@ File downloader utilities.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import requests
-
 from rich.progress import (
     Progress,
     BarColumn,
-    TextColumn,
     DownloadColumn,
-    TransferSpeedColumn,
+    TextColumn,
     TimeRemainingColumn,
+    TransferSpeedColumn,
+)
+
+from aipm.config import load_config
+from aipm.logger import get_logger
+
+from aipm.download.models import (
+    DownloadResult,
+    DownloadStatus,
 )
 
 
-def download_file(
-    url: str,
-    destination: Path,
-    resume: bool = True,
-) -> None:
+class Downloader:
     """
-    Download a file with resume support and Rich progress bar.
+    HTTP file downloader.
     """
 
-    destination.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    def __init__(self) -> None:
 
-    #
-    # Partial download file
-    #
+        cfg = load_config()
 
-    partial = destination.with_suffix(
-        destination.suffix + ".part"
-    )
-
-    downloaded = 0
-
-    headers: dict[str, str] = {}
-
-    #
-    # Resume support
-    #
-
-    if (
-        resume
-        and partial.exists()
-    ):
-
-        downloaded = partial.stat().st_size
-
-        headers["Range"] = (
-            f"bytes={downloaded}-"
+        self.log = get_logger(
+            __name__
         )
 
-    try:
-        print("=" * 60)
-        print("URL =", url)
-        print("Headers =", headers)
-        print("=" * 60)
-        response = requests.get(
-            url,
-            stream=True,
-            timeout=30,
-            headers=headers,
+        self.timeout = (
+            cfg.download.timeout
+        )
+
+        self.chunk_size = 8192
+
+    def download(
+        self,
+        url: str,
+        destination: Path,
+        resume: bool = True,
+    ) -> DownloadResult:
+        """
+        Download a file.
+        """
+
+        start = time.time()
+
+        destination.parent.mkdir(
+            parents=True,
+            exist_ok=True,
         )
 
         #
-        # Some servers don't support Range requests.
+        # Partial download
+        #
+
+        partial = destination.with_suffix(
+            destination.suffix + ".part"
+        )
+
+        downloaded = 0
+
+        headers: dict[str, str] = {}
+
+        #
+        # Resume support
         #
 
         if (
-            downloaded > 0
-            and response.status_code == 200
+            resume
+            and partial.exists()
         ):
 
-            downloaded = 0
+            downloaded = partial.stat().st_size
 
-            partial.unlink(
-                missing_ok=True,
+            headers["Range"] = (
+                f"bytes={downloaded}-"
             )
 
-        response.raise_for_status()
+        try:
 
-        remaining = int(
-            response.headers.get(
-                "content-length",
-                0,
-            )
-        )
-
-        total = downloaded + remaining
-
-        mode = (
-            "ab"
-            if downloaded
-            else "wb"
-        )
-
-        with Progress(
-            TextColumn(
-                "[bold cyan]{task.description}"
-            ),
-            BarColumn(),
-            DownloadColumn(),
-            TransferSpeedColumn(),
-            TimeRemainingColumn(),
-        ) as progress:
-
-            task = progress.add_task(
-                "Downloading",
-                total=total,
-                completed=downloaded,
+            self.log.info(
+                f"Downloading: {url}"
             )
 
-            with partial.open(
-                mode,
-            ) as file:
+            response = requests.get(
+                url,
+                stream=True,
+                timeout=self.timeout,
+                headers=headers,
+            )
 
-                for chunk in response.iter_content(
-                    chunk_size=8192,
-                ):
+            #
+            # Server doesn't support Range
+            #
 
-                    if not chunk:
-                        continue
+            if (
+                downloaded > 0
+                and response.status_code == 200
+            ):
 
-                    file.write(chunk)
+                downloaded = 0
 
-                    progress.update(
-                        task,
-                        advance=len(chunk),
-                    )
+                partial.unlink(
+                    missing_ok=True,
+                )
 
-        #
-        # Rename completed file
-        #
+            response.raise_for_status()
 
-        partial.replace(
-            destination
-        )
+            remaining = int(
+                response.headers.get(
+                    "content-length",
+                    0,
+                )
+            )
 
-    except requests.exceptions.RequestException as error:
+            total = (
+                downloaded
+                + remaining
+            )
 
-        raise RuntimeError(
-            f"Download failed: {error}"
-        ) from error
+            mode = (
+                "ab"
+                if downloaded
+                else "wb"
+            )
+
+            with Progress(
+
+                TextColumn(
+                    "[bold cyan]{task.description}"
+                ),
+
+                BarColumn(),
+
+                DownloadColumn(),
+
+                TransferSpeedColumn(),
+
+                TimeRemainingColumn(),
+
+            ) as progress:
+
+                task = progress.add_task(
+                    "Downloading",
+                    total=total,
+                    completed=downloaded,
+                )
+
+                with partial.open(
+                    mode,
+                ) as file:
+
+                    for chunk in response.iter_content(
+                        chunk_size=self.chunk_size,
+                    ):
+
+                        if not chunk:
+                            continue
+
+                        file.write(
+                            chunk
+                        )
+
+                        progress.update(
+                            task,
+                            advance=len(
+                                chunk
+                            ),
+                        )
+
+            #
+            # Rename completed file
+            #
+
+            partial.replace(
+                destination
+            )
+
+            elapsed = (
+                time.time()
+                - start
+            )
+
+            self.log.info(
+                "Download completed."
+            )
+
+            return DownloadResult(
+
+                status=DownloadStatus.SUCCESS,
+
+                file=destination,
+
+                bytes_downloaded=destination.stat().st_size,
+
+                elapsed=elapsed,
+
+                message="Download completed.",
+
+            )
+
+        except requests.exceptions.RequestException as error:
+
+            self.log.error(
+                str(error)
+            )
+
+            return DownloadResult(
+
+                status=DownloadStatus.FAILED,
+
+                file=destination,
+
+                bytes_downloaded=downloaded,
+
+                elapsed=time.time() - start,
+
+                message=str(error),
+
+            )
+
+        except Exception as error:
+
+            self.log.error(
+                str(error)
+            )
+
+            return DownloadResult(
+
+                status=DownloadStatus.FAILED,
+
+                file=destination,
+
+                bytes_downloaded=downloaded,
+
+                elapsed=time.time() - start,
+
+                message=str(error),
+
+            )
+
+
+downloader = Downloader()
