@@ -12,6 +12,8 @@ from aipm.commands import remove
 from aipm.commands import repair
 from aipm.commands import upgrade
 from aipm.commands import update
+from aipm.commands.search import run as search_run
+from aipm.commands import search
 
 app = typer.Typer(
     help="Universal AI Package Manager"
@@ -58,6 +60,15 @@ app.add_typer(
     name="update",
 )
 
+@app.command("search")
+def search_command(
+    keyword: str,
+) -> None:
+    """
+    Search registry.
+    """
+
+    search.run(keyword)
 
 @app.command("install")
 def install(
@@ -94,6 +105,15 @@ def version_command() -> None:
 
     run()
 
+@app.command("search")
+def search(
+    keyword: str,
+) -> None:
+    """
+    Search AI models.
+    """
+
+    search_run(keyword)
 
 #
 # Global Options
