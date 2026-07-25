@@ -1,5 +1,5 @@
 """
-Download result models.
+Download models.
 """
 
 from __future__ import annotations
@@ -18,11 +18,31 @@ class DownloadStatus(
     Download status.
     """
 
+    PENDING = "pending"
+
+    RUNNING = "running"
+
     SUCCESS = "success"
 
     FAILED = "failed"
 
     CANCELLED = "cancelled"
+
+
+class DownloadTask(BaseModel):
+    """
+    Download request.
+    """
+
+    name: str
+
+    url: str
+
+    destination: Path
+
+    sha256: str = ""
+
+    resume: bool = True
 
 
 class DownloadResult(BaseModel):
