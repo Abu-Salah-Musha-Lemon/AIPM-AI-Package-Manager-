@@ -1,6 +1,7 @@
 app:
   name: AIPM
   version: 0.1.0-alpha.1
+
 storage:
   root: C:\Users\srleo\.aipm
   cache: C:\Users\srleo\.aipm\cache
@@ -9,6 +10,11 @@ storage:
   workflows: C:\Users\srleo\.aipm\workflows
   outputs: C:\Users\srleo\.aipm\outputs
   logs: C:\Users\srleo\.aipm\logs
+
+registry:
+  url: https://raw.githubusercontent.com/Abu-Salah-Musha-Lemon/aipm-registry/main/registry.yaml
+  timeout: 30
+
 download:
   workers: 4
   timeout: 60

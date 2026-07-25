@@ -78,5 +78,38 @@ class RegistryManager:
 
         return None
 
+    def exists(
+        self,
+        name: str,
+    ) -> bool:
+        """
+        Check whether a model exists.
+        """
+
+        return (
+            self.get(name)
+            is not None
+        )
+
+    def require(
+        self,
+        name: str,
+    ) -> RegistryEntry:
+        """
+        Return registry entry or raise an error.
+        """
+
+        model = self.get(
+            name
+        )
+
+        if model is None:
+
+            raise ValueError(
+                f"Model '{name}' not found in registry."
+            )
+
+        return model
+
 
 registry_manager = RegistryManager()
