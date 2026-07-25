@@ -1,63 +1,67 @@
 """
-Download queue.
+Download task queue.
 """
 
 from __future__ import annotations
 
-from queue import Queue
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 
-from aipm.download.models import DownloadTask
+from aipm.config import load_config
+from aipm.download.models import (
+    DownloadResult,
+    DownloadTask,
+)
+from aipm.download.worker import download_worker
 
 
 class DownloadQueue:
     """
-    Thread-safe download queue.
+    Execute download tasks concurrently.
     """
 
     def __init__(self) -> None:
 
-        self._queue: Queue[
-            DownloadTask
-        ] = Queue()
+        cfg = load_config()
 
-    def add(
+        self.workers = cfg.download.workers
+
+    def run(
         self,
-        task: DownloadTask,
-    ) -> None:
+        tasks: list[DownloadTask],
+    ) -> list[DownloadResult]:
         """
-        Add task.
-        """
-
-        self._queue.put(
-            task
-        )
-
-    def get(
-        self,
-    ) -> DownloadTask:
-        """
-        Get next task.
+        Execute download tasks.
         """
 
-        return self._queue.get()
+        if not tasks:
+            return []
 
-    def empty(
-        self,
-    ) -> bool:
-        """
-        Queue empty?
-        """
+        results: list[DownloadResult] = []
 
-        return self._queue.empty()
+        with ThreadPoolExecutor(
+            max_workers=self.workers,
+        ) as executor:
 
-    def size(
-        self,
-    ) -> int:
-        """
-        Queue size.
-        """
+            futures = [
 
-        return self._queue.qsize()
+                executor.submit(
+                    download_worker.run,
+                    task,
+                )
+
+                for task in tasks
+            ]
+
+            for future in as_completed(
+                futures,
+            ):
+
+                results.append(
+                    future.result()
+                )
+
+        return results
 
 
 download_queue = DownloadQueue()

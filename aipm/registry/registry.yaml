@@ -7,5 +7,5 @@ models:
     format: safetensors
     size: 23GB
     sha256: ""
-    url: https://example.com/flux.safetensors
+    url: https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
     description: 'FLUX: Image Generator'

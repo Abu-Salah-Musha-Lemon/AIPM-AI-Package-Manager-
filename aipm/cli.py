@@ -14,6 +14,7 @@ from aipm.commands import upgrade
 from aipm.commands import update
 from aipm.commands.search import run as search_run
 from aipm.commands import search
+from aipm.commands import download
 
 app = typer.Typer(
     help="Universal AI Package Manager"

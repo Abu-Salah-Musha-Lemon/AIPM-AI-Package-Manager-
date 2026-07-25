@@ -9,9 +9,12 @@ from pathlib import Path
 from aipm.cache import cache_manager
 from aipm.cache.models import CacheEntry
 from aipm.config import load_config
-from aipm.download.downloader import downloader
 from aipm.download.hash import calculate_sha256
-from aipm.download.models import DownloadStatus
+from aipm.download.models import (
+    DownloadTask,
+    DownloadStatus,
+)
+from aipm.download.queue import download_queue
 from aipm.logger import get_logger
 from aipm.utils.hash import sha256_file
 
@@ -36,7 +39,7 @@ class DownloadManager:
         sha256: str = "",
     ) -> Path:
         """
-        Download a model file.
+        Download a single model.
         """
 
         #
@@ -72,7 +75,7 @@ class DownloadManager:
         )
 
         #
-        # Destination file
+        # Destination
         #
 
         target = (
@@ -80,24 +83,40 @@ class DownloadManager:
             / "model.bin"
         )
 
-        self.log.info(
-            f"Downloading {name}"
-        )
+        #
+        # Create download task
+        #
 
-        result = downloader.download(
+        task = DownloadTask(
+            name=name,
             url=url,
             destination=target,
+            sha256=sha256,
             resume=True,
         )
+
+        #
+        # Execute queue
+        #
+
+        result = download_queue.run(
+            [task]
+        )[0]
 
         if (
             result.status
             != DownloadStatus.SUCCESS
         ):
-
             raise RuntimeError(
                 result.message
             )
+
+        if result.file is None:
+            raise RuntimeError(
+                "Download returned no file."
+            )
+
+        target = result.file
 
         self.log.info(
             "Download completed."
@@ -151,6 +170,18 @@ class DownloadManager:
         )
 
         return target
+
+    def download_many(
+        self,
+        tasks: list[DownloadTask],
+    ):
+        """
+        Download multiple models concurrently.
+        """
+
+        return download_queue.run(
+            tasks
+        )
 
     def verify(
         self,

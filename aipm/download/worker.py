@@ -27,7 +27,6 @@ class DownloadWorker:
         return downloader.download(
             url=task.url,
             destination=task.destination,
-            sha256=task.sha256,
             resume=task.resume,
         )
 
