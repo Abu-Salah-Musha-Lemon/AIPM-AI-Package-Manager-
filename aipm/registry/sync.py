@@ -32,6 +32,16 @@ class RegistrySync:
             / "registry.yaml"
         )
 
+        self.temp = (
+            Path(__file__).parent
+            / "registry.tmp"
+        )
+
+        self.backup = (
+            Path(__file__).parent
+            / "registry.yaml.bak"
+        )
+
     def sync(self) -> int:
         """
         Download the latest registry.
@@ -49,7 +59,7 @@ class RegistrySync:
 
         response.raise_for_status()
 
-        self.destination.write_text(
+        self.temp.write_text(
             response.text,
             encoding="utf-8",
         )
@@ -59,6 +69,7 @@ class RegistrySync:
         )
 
         return len(response.text)
+   
 
 
 registry_sync = RegistrySync()
