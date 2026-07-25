@@ -40,7 +40,17 @@ class DownloadConfig(BaseModel):
     timeout: int = 60
     retries: int = 3
     verify_sha256: bool = True
+class RegistryConfig(BaseModel):
+    """
+    Remote registry configuration.
+    """
 
+    url: str = (
+        "https://raw.githubusercontent.com/"
+        "<your-username>/aipm-registry/main/registry.yaml"
+    )
+
+    timeout: int = 30
 
 class Config(BaseModel):
     """
@@ -53,6 +63,9 @@ class Config(BaseModel):
 
     storage: StorageConfig = Field(
         default_factory=StorageConfig
+    )
+    registry: RegistryConfig = Field(
+    default_factory=RegistryConfig,
     )
 
     download: DownloadConfig = Field(

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from aipm.config.manager import config_manager
 from aipm.config.models import Config
+from aipm.config.models import Config
 
 
 def load_config() -> Config:

@@ -11,6 +11,7 @@ import yaml
 from aipm.config.defaults import create_default_config
 from aipm.config.models import Config
 from aipm.logger import get_logger
+from aipm.config.models import Config
 
 class ConfigManager:
     """

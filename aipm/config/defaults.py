@@ -12,6 +12,7 @@ from aipm.config.models import (
     DownloadConfig,
     StorageConfig,
 )
+from aipm.config.models import Config
 
 
 def create_default_config() -> Config:
