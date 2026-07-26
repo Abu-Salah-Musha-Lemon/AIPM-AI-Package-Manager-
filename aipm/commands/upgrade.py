@@ -1,16 +1,13 @@
 """
-Upgrade CLI commands for AIPM.
+Upgrade CLI commands.
 """
 
 from __future__ import annotations
 
 import typer
 
-from rich.table import Table
-
 from aipm.upgrade import upgrade_manager
 from aipm.utils.console import console
-
 
 app = typer.Typer(
     name="upgrade",
@@ -18,45 +15,55 @@ app = typer.Typer(
 )
 
 
-@app.command()
-def all():
+@app.callback(invoke_without_command=True)
+def main(
+    ctx: typer.Context,
+) -> None:
     """
-    Upgrade all installed AI models.
+    Upgrade all installed models.
     """
+
+    if ctx.invoked_subcommand:
+        return
 
     console.print(
-        "[bold cyan]Checking installed models...[/bold cyan]"
+        "[bold cyan]Checking for model updates...[/bold cyan]"
     )
 
-    stats = upgrade_manager.upgrade()
+    result = upgrade_manager.upgrade()
 
-    table = Table(
-        title="Upgrade Summary"
+    if not result.success:
+
+        console.print(
+            f"\n[bold red]{result.message}[/bold red]"
+        )
+
+        raise typer.Exit(1)
+
+    if result.upgraded:
+
+        console.print(
+            "\n[bold green]✓ Upgrade completed successfully[/bold green]"
+        )
+
+    else:
+
+        console.print(
+            "\n[yellow]Nothing to upgrade.[/yellow]"
+        )
+
+    console.print(
+        f"Status      : {'Updated' if result.upgraded else 'No Updates'}"
     )
 
-    table.add_column(
-        "Status",
-        style="cyan",
+    console.print(
+        f"Downloaded  : {'Yes' if result.downloaded else 'No'}"
     )
 
-    table.add_column(
-        "Count",
-        justify="right",
+    console.print(
+        f"Verified    : {'Yes' if result.verified else 'No'}"
     )
 
-    table.add_row(
-        "Updated",
-        str(stats["updated"]),
+    console.print(
+        f"Message     : {result.message}"
     )
-
-    table.add_row(
-        "Skipped",
-        str(stats["skipped"]),
-    )
-
-    table.add_row(
-        "Failed",
-        str(stats["failed"]),
-    )
-
-    console.print(table)

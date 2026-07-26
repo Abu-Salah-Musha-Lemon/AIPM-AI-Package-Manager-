@@ -8,11 +8,12 @@ from aipm.logger import get_logger
 
 from aipm.models import model_manager
 from aipm.update import update_manager
+from aipm.upgrade.models import UpgradeResult
 
 
 class UpgradeManager:
     """
-    Upgrade all installed AI models.
+    Upgrade installed AI models.
     """
 
     def __init__(self) -> None:
@@ -23,26 +24,18 @@ class UpgradeManager:
 
     def upgrade(
         self,
-    ) -> dict[str, int]:
+    ) -> UpgradeResult:
         """
         Upgrade all installed models.
-
-        Returns:
-
-            {
-                "updated": int,
-                "skipped": int,
-                "failed": int,
-            }
         """
 
-        stats = {
-            "updated": 0,
-            "skipped": 0,
-            "failed": 0,
-        }
+        models = (
+            model_manager.list_models()
+        )
 
-        models = model_manager.list_models()
+        #
+        # Nothing installed
+        #
 
         if not models:
 
@@ -50,7 +43,25 @@ class UpgradeManager:
                 "No installed models found."
             )
 
-            return stats
+            return UpgradeResult(
+
+                success=True,
+
+                upgraded=False,
+
+                downloaded=False,
+
+                verified=False,
+
+                message="No installed models found.",
+
+            )
+
+        updated = 0
+
+        skipped = 0
+
+        failed = 0
 
         for name in models:
 
@@ -60,27 +71,58 @@ class UpgradeManager:
 
             try:
 
-                result = update_manager.update(
-                    name
+                result = (
+                    update_manager.update(
+                        name
+                    )
                 )
+
+                #
+                # update() returns bool
+                #
 
                 if result:
 
-                    stats["updated"] += 1
+                    updated += 1
 
                 else:
 
-                    stats["failed"] += 1
-
+                    skipped += 1
             except Exception as error:
 
                 self.log.error(
                     f"{name}: {error}"
                 )
 
-                stats["failed"] += 1
+                failed += 1
 
-        return stats
+        #
+        # Final summary
+        #
+
+        message = (
+            f"Updated={updated}, "
+            f"Skipped={skipped}, "
+            f"Failed={failed}"
+        )
+
+        self.log.info(
+            message
+        )
+
+        return UpgradeResult(
+
+            success=(failed == 0),
+
+            upgraded=(updated > 0),
+
+            downloaded=(updated > 0),
+
+            verified=(failed == 0),
+
+            message=message,
+
+        )
 
 
 upgrade_manager = UpgradeManager()
