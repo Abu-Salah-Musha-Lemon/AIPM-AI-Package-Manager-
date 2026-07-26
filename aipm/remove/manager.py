@@ -8,8 +8,8 @@ import shutil
 from pathlib import Path
 
 from aipm.cache import cache_manager
-from aipm.config import load_config
 from aipm.logger import get_logger
+from aipm.storage import storage_manager
 
 from .models import RemoveResult
 
@@ -19,25 +19,55 @@ class RemoveManager:
     Remove installed AI models.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+    ) -> None:
 
-        cfg = load_config()
+        self.log = get_logger(
+            __name__
+        )
 
-        self.log = get_logger(__name__)
+        models = storage_manager.get(
+            "models"
+        )
 
-        self.models = cfg.storage.models
+        if models is None:
+
+            raise RuntimeError(
+                "Models storage is not configured."
+            )
+
+        self.models = models
 
     def remove(
         self,
         name: str,
     ) -> RemoveResult:
         """
-        Remove installed model.
+        Remove an installed model.
         """
 
-        model_path = self.models / name
+        self.log.info(
+            f"Removing model: {name}"
+        )
+
+        #
+        # Model path
+        #
+
+        model_path = (
+            self.models / name
+        )
+
+        #
+        # Check installation
+        #
 
         if not model_path.exists():
+
+            self.log.warning(
+                "Model is not installed."
+            )
 
             return RemoveResult(
                 success=False,
@@ -47,6 +77,10 @@ class RemoveManager:
         removed_files = 0
         removed_bytes = 0
 
+        #
+        # Remove directory
+        #
+
         if model_path.is_dir():
 
             for file in model_path.rglob("*"):
@@ -54,21 +88,48 @@ class RemoveManager:
                 if file.is_file():
 
                     removed_files += 1
-                    removed_bytes += file.stat().st_size
 
-            shutil.rmtree(model_path)
+                    removed_bytes += (
+                        file.stat().st_size
+                    )
+
+            shutil.rmtree(
+                model_path
+            )
+
+        #
+        # Remove single file
+        #
 
         else:
 
             removed_files = 1
-            removed_bytes = model_path.stat().st_size
+
+            removed_bytes = (
+                model_path.stat().st_size
+            )
 
             model_path.unlink()
 
-        cache_manager.remove(name)
+        #
+        # Remove cache entry
+        #
+
+        self.log.info(
+            "Removing cache entry."
+        )
+
+        cache_manager.remove(
+            name
+        )
 
         self.log.info(
             f"Removed model: {name}"
+        )
+
+        self.log.info(
+            f"Removed {removed_files} file(s), "
+            f"{removed_bytes} bytes."
         )
 
         return RemoveResult(
