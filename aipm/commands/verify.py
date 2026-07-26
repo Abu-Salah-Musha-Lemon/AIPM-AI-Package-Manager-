@@ -5,12 +5,11 @@ Verify CLI commands for AIPM.
 from __future__ import annotations
 
 import typer
-
 from rich.table import Table
 
+from aipm.registry import registry_manager
 from aipm.utils.console import console
 from aipm.verify import verify_manager
-
 
 app = typer.Typer(
     name="verify",
@@ -18,21 +17,57 @@ app = typer.Typer(
 )
 
 
-@app.command()
-def model(
-    name: str,
-):
+@app.callback(invoke_without_command=True)
+def main(
+    ctx: typer.Context,
+    name: str = typer.Argument(
+        ...,
+        help="Model name",
+    ),
+) -> None:
     """
     Verify an installed model.
     """
 
+    if ctx.invoked_subcommand:
+        return
+
+    #
+    # Check registry first
+    #
+
+    try:
+        registry_manager.require(name)
+
+    except ValueError as error:
+
+        console.print(
+            f"[bold red]Error:[/bold red] {error}"
+        )
+
+        raise typer.Exit(1)
+
     console.print(
-        f"[bold cyan]Verifying model:[/bold cyan] {name}"
+        f"[bold cyan]Verifying:[/bold cyan] {name}"
     )
 
-    result = verify_manager.verify(
-        name
-    )
+    #
+    # Verify installed files
+    #
+
+    try:
+
+        result = verify_manager.verify(
+            name
+        )
+
+    except Exception as error:
+
+        console.print(
+            f"[bold red]Error:[/bold red] {error}"
+        )
+
+        raise typer.Exit(1)
 
     table = Table(
         title="Verification Result"
@@ -50,7 +85,9 @@ def model(
 
     table.add_row(
         "File Exists",
-        "✔ Yes" if result.exists else "✘ No",
+        "✔ Yes"
+        if result.exists
+        else "✘ No",
     )
 
     table.add_row(
@@ -69,16 +106,24 @@ def model(
 
     console.print(table)
 
-    if result.checksum_valid:
+    #
+    # Final status
+    #
+
+    if (
+        result.exists
+        and result.checksum_valid
+        and result.metadata_valid
+    ):
 
         console.print(
-            "[bold green]✓ Model is valid[/bold green]"
+            "\n[bold green]✓ Verification successful[/bold green]"
         )
 
-    else:
+        raise typer.Exit(0)
 
-        console.print(
-            f"[bold red]{result.message}[/bold red]"
-        )
+    console.print(
+        f"\n[bold red]{result.message}[/bold red]"
+    )
 
-        raise typer.Exit(1)
+    raise typer.Exit(1)
