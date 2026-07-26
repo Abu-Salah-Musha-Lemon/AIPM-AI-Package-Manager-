@@ -8,19 +8,48 @@ from pathlib import Path
 
 from aipm.cache import cache_manager
 from aipm.download.hash import calculate_sha256
+from aipm.logger import get_logger
 from aipm.verify.models import VerifyResult
 
 
 class VerifyManager:
+    """
+    Verify installed AI models.
+    """
+
+    def __init__(
+        self,
+    ) -> None:
+
+        self.log = get_logger(
+            __name__
+        )
 
     def verify(
         self,
         name: str,
     ) -> VerifyResult:
+        """
+        Verify an installed model.
+        """
 
-        cached = cache_manager.get(name)
+        self.log.info(
+            f"Verifying model: {name}"
+        )
+
+        #
+        # Lookup cache
+        #
+
+        cached = cache_manager.get(
+            name
+        )
 
         if cached is None:
+
+            self.log.warning(
+                "Model not found in cache."
+            )
 
             return VerifyResult(
                 name=name,
@@ -30,9 +59,19 @@ class VerifyManager:
                 message="Model not found in cache.",
             )
 
-        path = Path(cached.path)
+        #
+        # Check file
+        #
+
+        path = Path(
+            cached.path
+        )
 
         if not path.exists():
+
+            self.log.warning(
+                "Model file is missing."
+            )
 
             return VerifyResult(
                 name=name,
@@ -42,19 +81,41 @@ class VerifyManager:
                 message="Model file is missing.",
             )
 
-        checksum = (
-            calculate_sha256(path)
+        #
+        # Verify checksum
+        #
+
+        checksum_valid = (
+            calculate_sha256(
+                path
+            )
             == cached.sha256
         )
+
+        if checksum_valid:
+
+            self.log.info(
+                "Verification successful."
+            )
+
+        else:
+
+            self.log.error(
+                "SHA256 checksum mismatch."
+            )
+
+        #
+        # Result
+        #
 
         return VerifyResult(
             name=name,
             exists=True,
-            checksum_valid=checksum,
+            checksum_valid=checksum_valid,
             metadata_valid=True,
             message=(
                 "Verification successful."
-                if checksum
+                if checksum_valid
                 else "SHA256 mismatch."
             ),
         )
