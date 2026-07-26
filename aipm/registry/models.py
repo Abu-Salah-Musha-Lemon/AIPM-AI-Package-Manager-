@@ -4,6 +4,8 @@ Registry models.
 
 from __future__ import annotations
 
+from enum import Enum
+
 from pydantic import (
     BaseModel,
     Field,
@@ -44,3 +46,33 @@ class Registry(BaseModel):
     models: list[RegistryEntry] = Field(
         default_factory=list
     )
+
+
+#
+# Result Models
+#
+
+class RegistryStatus(
+    str,
+    Enum,
+):
+
+    SUCCESS = "success"
+
+    EMPTY = "empty"
+
+    FAILED = "failed"
+
+
+class RegistryResult(BaseModel):
+    """
+    Generic registry result.
+    """
+
+    status: RegistryStatus
+
+    models: list[RegistryEntry] = Field(
+        default_factory=list
+    )
+
+    message: str = ""

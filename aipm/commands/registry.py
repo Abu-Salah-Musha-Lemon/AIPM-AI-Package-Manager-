@@ -11,7 +11,6 @@ from aipm.registry import (
     registry_manager,
     registry_sync,
 )
-
 from aipm.utils.console import console
 
 app = typer.Typer(
@@ -26,10 +25,18 @@ def list_models() -> None:
     List registry models.
     """
 
-    models = registry_manager.all_models()
+    models = registry_manager.list()
+
+    if not models:
+
+        console.print(
+            "[yellow]Registry is empty.[/yellow]"
+        )
+
+        return
 
     table = Table(
-        title="Registry Models"
+        title=f"Registry Models ({registry_manager.count()})"
     )
 
     table.add_column(
@@ -52,14 +59,6 @@ def list_models() -> None:
         style="magenta",
     )
 
-    if not models:
-
-        console.print(
-            "Registry is empty."
-        )
-
-        return
-
     for model in models:
 
         table.add_row(
@@ -80,17 +79,15 @@ def info(
     Show registry model details.
     """
 
-    model = registry_manager.get(
-        name
-    )
+    model = registry_manager.get(name)
 
     if model is None:
 
         console.print(
-            f"Model not found: {name}"
+            f"[bold red]Model not found:[/bold red] {name}"
         )
 
-        raise typer.Exit()
+        raise typer.Exit(1)
 
     table = Table(
         title=f"Registry Model: {model.name}"
@@ -106,50 +103,15 @@ def info(
         style="green",
     )
 
-    table.add_row(
-        "Name",
-        model.name,
-    )
-
-    table.add_row(
-        "Version",
-        model.version,
-    )
-
-    table.add_row(
-        "Architecture",
-        model.architecture,
-    )
-
-    table.add_row(
-        "Type",
-        model.type,
-    )
-
-    table.add_row(
-        "Framework",
-        model.framework,
-    )
-
-    table.add_row(
-        "Format",
-        model.format,
-    )
-
-    table.add_row(
-        "Size",
-        model.size,
-    )
-
-    table.add_row(
-        "Description",
-        model.description,
-    )
-
-    table.add_row(
-        "URL",
-        model.url,
-    )
+    table.add_row("Name", model.name)
+    table.add_row("Version", model.version)
+    table.add_row("Architecture", model.architecture)
+    table.add_row("Type", model.type)
+    table.add_row("Framework", model.framework)
+    table.add_row("Format", model.format)
+    table.add_row("Size", model.size)
+    table.add_row("Description", model.description)
+    table.add_row("URL", model.url)
 
     console.print(table)
 
@@ -162,31 +124,20 @@ def search(
     Search registry.
     """
 
-    keyword = keyword.lower()
-
-    models = [
-
-        model
-
-        for model in registry_manager.all_models()
-
-        if (
-            keyword in model.name.lower()
-            or keyword in model.description.lower()
-            or keyword in model.architecture.lower()
-        )
-    ]
+    models = registry_manager.search(
+        keyword
+    )
 
     if not models:
 
         console.print(
-            "No matching models found."
+            "[yellow]No matching models found.[/yellow]"
         )
 
         return
 
     table = Table(
-        title=f"Search: {keyword}"
+        title=f"Search Results ({len(models)})"
     )
 
     table.add_column(
@@ -195,29 +146,36 @@ def search(
     )
 
     table.add_column(
-        "Architecture",
+        "Version",
         style="green",
     )
 
     table.add_column(
-        "Type",
+        "Architecture",
         style="yellow",
+    )
+
+    table.add_column(
+        "Type",
+        style="magenta",
     )
 
     for model in models:
 
         table.add_row(
             model.name,
+            model.version,
             model.architecture,
             model.type,
         )
 
     console.print(table)
 
+
 @app.command()
 def sync() -> None:
     """
-    Synchronize local registry with remote registry.
+    Synchronize registry.
     """
 
     try:
@@ -230,12 +188,18 @@ def sync() -> None:
             f"[bold red]Registry sync failed:[/bold red] {error}"
         )
 
-        raise typer.Exit(code=1)
+        raise typer.Exit(1)
+
+    #
+    # Reload registry cache
+    #
+
+    registry_manager.reload()
 
     console.print(
-        "[bold green]Registry synchronized successfully.[/bold green]"
+        "[bold green]✓ Registry synchronized successfully[/bold green]"
     )
 
     console.print(
-        f"Downloaded {size} bytes."
+        f"Downloaded {size:,} bytes."
     )
