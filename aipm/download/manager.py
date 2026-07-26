@@ -8,7 +8,8 @@ from pathlib import Path
 
 from aipm.cache import cache_manager
 from aipm.cache.models import CacheEntry
-from aipm.config import load_config
+
+from aipm.storage import storage_manager
 from aipm.download.hash import calculate_sha256
 from aipm.download.models import (
     DownloadTask,
@@ -26,11 +27,21 @@ class DownloadManager:
 
     def __init__(self) -> None:
 
-        cfg = load_config()
+        self.log = get_logger(
+            __name__
+        )
 
-        self.log = get_logger(__name__)
+        models = storage_manager.get(
+            "models"
+        )
 
-        self.models = cfg.storage.models
+        if models is None:
+
+            raise RuntimeError(
+                "Models storage is not configured."
+            )
+
+    self.models = models
 
     def download(
         self,

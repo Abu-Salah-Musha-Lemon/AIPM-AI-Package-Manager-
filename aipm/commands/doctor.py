@@ -12,6 +12,7 @@ from aipm.doctor import (
     doctor_manager,
     DoctorStatus,
 )
+from aipm.storage import storage_manager
 from aipm.utils.console import console
 
 
@@ -201,41 +202,48 @@ def run() -> None:
         style="green",
     )
 
-    storage = result.storage
-
-    storage_table.add_row(
-        "Cache",
-        "Ready" if storage.cache else "Missing",
+    storage_table.add_column(
+        "Empty",
+        style="yellow",
     )
 
-    storage_table.add_row(
-        "Models",
-        "Ready" if storage.models else "Missing",
+    storage_table.add_column(
+        "Size",
+        style="magenta",
     )
 
-    storage_table.add_row(
-        "Loras",
-        "Ready" if storage.loras else "Missing",
+    for name in storage_manager.list():
+
+        info = storage_manager.info(
+            name
+        )
+
+        if info is None:
+
+            continue
+
+        storage_table.add_row(
+            info.name.capitalize(),
+            "Ready"
+            if info.exists
+            else "Missing",
+            "Yes"
+            if info.empty
+            else "No",
+            f"{info.size:,} bytes",
+        )
+
+    console.print(
+        app_table
     )
 
-    storage_table.add_row(
-        "Workflows",
-        "Ready" if storage.workflows else "Missing",
+    console.print(
+        system_table
     )
 
-    storage_table.add_row(
-        "Outputs",
-        "Ready" if storage.outputs else "Missing",
+    console.print(
+        storage_table
     )
-
-    storage_table.add_row(
-        "Logs",
-        "Ready" if storage.logs else "Missing",
-    )
-
-    console.print(app_table)
-    console.print(system_table)
-    console.print(storage_table)
 
     console.print(
         "\n[bold green]✓ Doctor completed successfully[/bold green]"
