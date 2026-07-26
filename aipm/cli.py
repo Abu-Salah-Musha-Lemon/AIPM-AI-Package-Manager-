@@ -27,6 +27,9 @@ from aipm.commands import (
 
 from aipm.commands.install import run as install_run
 from aipm.commands.search import run as search_run
+from aipm.commands import (
+    history,
+)
 
 app = typer.Typer(
     help="Universal AI Package Manager",
@@ -75,6 +78,11 @@ app.add_typer(
     update.app,
     name="update",
 )
+app.add_typer(
+    history.app,
+    name="history",
+)
+
 
 # ----------------------------------------------------------------------
 # Single Commands

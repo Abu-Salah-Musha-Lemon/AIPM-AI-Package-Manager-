@@ -10,7 +10,14 @@ from aipm.registry import registry_manager
 from aipm.remove import remove_manager
 from aipm.repair.models import RepairResult
 from aipm.verify import verify_manager
+from datetime import datetime
 
+from aipm.history import history_manager
+from aipm.history.models import (
+    HistoryEntry,
+    HistoryOperation,
+    HistoryStatus,
+)
 
 class RepairManager:
     """
@@ -20,7 +27,7 @@ class RepairManager:
     def __init__(self) -> None:
 
         self.log = get_logger(__name__)
-
+    started = datetime.now()
     def repair(
         self,
         name: str,
@@ -180,7 +187,32 @@ class RepairManager:
         #
 
         if progress:
+            
+            history_manager.add(
 
+                HistoryEntry(
+
+                    operation=HistoryOperation.REPAIR,
+
+                    model=name,
+
+                    version="",
+
+                    status=HistoryStatus.FAILED,
+
+                    started=started,
+
+                    finished=datetime.now(),
+
+                    duration=(
+                        datetime.now() - started
+                    ).total_seconds(),
+
+                    message="SHA256 mismatch.",
+
+                )
+
+            )
             self.log.info(
                 "Running final verification..."
             )
@@ -203,6 +235,32 @@ class RepairManager:
 
             self.log.info(
                 "Repair completed."
+            )
+            
+            history_manager.add(
+
+                HistoryEntry(
+
+                    operation=HistoryOperation.REPAIR,
+
+                    model=name,
+
+                    version="",
+
+                    status=HistoryStatus.SUCCESS,
+
+                    started=started,
+
+                    finished=datetime.now(),
+
+                    duration=(
+                        datetime.now() - started
+                    ).total_seconds(),
+
+                    message="Verification successful.",
+
+                )
+
             )
 
             return RepairResult(

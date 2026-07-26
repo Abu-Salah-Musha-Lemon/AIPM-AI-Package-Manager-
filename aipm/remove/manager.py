@@ -12,7 +12,14 @@ from aipm.logger import get_logger
 from aipm.storage import storage_manager
 
 from .models import RemoveResult
+from datetime import datetime
 
+from aipm.history import history_manager
+from aipm.history.models import (
+    HistoryEntry,
+    HistoryOperation,
+    HistoryStatus,
+)
 
 class RemoveManager:
     """
@@ -38,7 +45,7 @@ class RemoveManager:
             )
 
         self.models = models
-
+    started = datetime.now()
     def remove(
         self,
         name: str,
@@ -68,7 +75,31 @@ class RemoveManager:
             self.log.warning(
                 "Model is not installed."
             )
+            history_manager.add(
 
+            HistoryEntry(
+
+                operation=HistoryOperation.REMOVE,
+
+                model=name,
+
+                version="",
+
+                status=HistoryStatus.FAILED,
+
+                started=started,
+
+                finished=datetime.now(),
+
+                duration=(
+                    datetime.now() - started
+                ).total_seconds(),
+
+                message="Model not installed.",
+
+                )
+
+            )
             return RemoveResult(
                 success=False,
                 message="Model is not installed.",
@@ -132,6 +163,31 @@ class RemoveManager:
             f"{removed_bytes} bytes."
         )
 
+        history_manager.add(
+
+            HistoryEntry(
+
+                operation=HistoryOperation.REMOVE,
+
+                model=name,
+
+                version="",
+
+                status=HistoryStatus.SUCCESS,
+
+                started=started,
+
+                finished=datetime.now(),
+
+                duration=(
+                    datetime.now() - started
+                ).total_seconds(),
+
+                message="Model removed.",
+
+            )
+
+        )
         return RemoveResult(
             success=True,
             removed_files=removed_files,

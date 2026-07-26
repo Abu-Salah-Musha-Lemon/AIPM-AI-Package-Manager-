@@ -21,6 +21,14 @@ from .models import (
     InstallResult,
     InstallStatus,
 )
+from datetime import datetime
+
+from aipm.history import history_manager
+from aipm.history.models import (
+    HistoryEntry,
+    HistoryOperation,
+    HistoryStatus,
+)
 
 
 class InstallManager:
@@ -35,7 +43,7 @@ class InstallManager:
         self.log = get_logger(
             __name__
         )
-
+    started = datetime.now()
     def install(
         self,
         name: str,
@@ -109,7 +117,31 @@ class InstallManager:
             )
 
         except Exception as error:
+            history_manager.add(
 
+            HistoryEntry(
+
+                    operation=HistoryOperation.INSTALL,
+
+                    model=name,
+
+                    version="",
+
+                    status=HistoryStatus.FAILED,
+
+                    started=started,
+
+                    finished=datetime.now(),
+
+                    duration=(
+                        datetime.now() - started
+                    ).total_seconds(),
+
+                    message=str(error),
+
+                )
+
+            )
             self.log.exception(
                 "Installation failed."
             )
@@ -160,7 +192,31 @@ class InstallManager:
         self.log.info(
             "Installation completed successfully."
         )
+        history_manager.add(
 
+            HistoryEntry(
+
+                operation=HistoryOperation.INSTALL,
+
+                model=name,
+
+                version=metadata.version,
+
+                status=HistoryStatus.SUCCESS,
+
+                started=started,
+
+                finished=datetime.now(),
+
+                duration=(
+                    datetime.now() - started
+                ).total_seconds(),
+
+                message="Installation completed.",
+
+            )
+
+        )
         return InstallResult(
             status=InstallStatus.SUCCESS,
             name=metadata.name,

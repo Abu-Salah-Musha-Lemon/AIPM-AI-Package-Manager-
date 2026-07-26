@@ -13,7 +13,14 @@ from aipm.verify import verify_manager
 from aipm.update.models import (
     UpdateResult,
 )
+from datetime import datetime
 
+from aipm.history import history_manager
+from aipm.history.models import (
+    HistoryEntry,
+    HistoryOperation,
+    HistoryStatus,
+)
 
 class UpdateManager:
     """
@@ -27,7 +34,7 @@ class UpdateManager:
         self.log = get_logger(
             __name__
         )
-
+    started = datetime.now()
     def update(
         self,
         name: str,
@@ -74,6 +81,31 @@ class UpdateManager:
                 "Model is not installed."
             )
 
+            history_manager.add(
+
+            HistoryEntry(
+
+                operation=HistoryOperation.UPDATE,
+
+                model=name,
+
+                version="",
+
+                status=HistoryStatus.FAILED,
+
+                started=started,
+
+                finished=datetime.now(),
+
+                duration=(
+                    datetime.now() - started
+                ).total_seconds(),
+
+                message="SHA256 mismatch.",
+
+            )
+
+        )
             return UpdateResult(
 
                 success=False,
@@ -211,6 +243,32 @@ class UpdateManager:
 
         self.log.info(
             "Update completed successfully."
+        )
+        
+        history_manager.add(
+
+            HistoryEntry(
+
+                operation=HistoryOperation.UPDATE,
+
+                model=name,
+
+                version="",
+
+                status=HistoryStatus.SUCCESS,
+
+                started=started,
+
+                finished=datetime.now(),
+
+                duration=(
+                    datetime.now() - started
+                ).total_seconds(),
+
+                message="Verification successful.",
+
+            )
+
         )
 
         return UpdateResult(

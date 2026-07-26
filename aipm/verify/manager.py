@@ -10,7 +10,14 @@ from aipm.cache import cache_manager
 from aipm.download.hash import calculate_sha256
 from aipm.logger import get_logger
 from aipm.verify.models import VerifyResult
+from datetime import datetime
 
+from aipm.history import history_manager
+from aipm.history.models import (
+    HistoryEntry,
+    HistoryOperation,
+    HistoryStatus,
+)
 
 class VerifyManager:
     """
@@ -24,7 +31,7 @@ class VerifyManager:
         self.log = get_logger(
             __name__
         )
-
+    started = datetime.now()
     def verify(
         self,
         name: str,
@@ -73,6 +80,32 @@ class VerifyManager:
                 "Model file is missing."
             )
 
+            history_manager.add(
+
+                HistoryEntry(
+
+                    operation=HistoryOperation.VERIFY,
+
+                    model=name,
+
+                    version="",
+
+                    status=HistoryStatus.FAILED,
+
+                    started=started,
+
+                    finished=datetime.now(),
+
+                    duration=(
+                        datetime.now() - started
+                    ).total_seconds(),
+
+                    message="SHA256 mismatch.",
+
+                )
+
+            )
+
             return VerifyResult(
                 name=name,
                 exists=False,
@@ -107,7 +140,31 @@ class VerifyManager:
         #
         # Result
         #
+            history_manager.add(
 
+            HistoryEntry(
+
+                operation=HistoryOperation.VERIFY,
+
+                model=name,
+
+                version="",
+
+                status=HistoryStatus.SUCCESS,
+
+                started=started,
+
+                finished=datetime.now(),
+
+                duration=(
+                    datetime.now() - started
+                ).total_seconds(),
+
+                message="Verification successful.",
+
+            )
+
+        )
         return VerifyResult(
             name=name,
             exists=True,
