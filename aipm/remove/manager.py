@@ -11,6 +11,8 @@ from aipm.cache import cache_manager
 from aipm.config import load_config
 from aipm.logger import get_logger
 
+from .models import RemoveResult
+
 
 class RemoveManager:
     """
@@ -25,34 +27,43 @@ class RemoveManager:
 
         self.models = cfg.storage.models
 
-
     def remove(
         self,
         name: str,
-    ) -> bool:
+    ) -> RemoveResult:
         """
-        Remove an installed model.
+        Remove installed model.
         """
 
         model_path = self.models / name
 
-        #
-        # Remove model files
-        #
+        if not model_path.exists():
 
-        if model_path.exists():
+            return RemoveResult(
+                success=False,
+                message="Model is not installed.",
+            )
 
-            if model_path.is_dir():
+        removed_files = 0
+        removed_bytes = 0
 
-                shutil.rmtree(model_path)
+        if model_path.is_dir():
 
-            else:
+            for file in model_path.rglob("*"):
 
-                model_path.unlink()
+                if file.is_file():
 
-        #
-        # Remove cache entry
-        #
+                    removed_files += 1
+                    removed_bytes += file.stat().st_size
+
+            shutil.rmtree(model_path)
+
+        else:
+
+            removed_files = 1
+            removed_bytes = model_path.stat().st_size
+
+            model_path.unlink()
 
         cache_manager.remove(name)
 
@@ -60,7 +71,12 @@ class RemoveManager:
             f"Removed model: {name}"
         )
 
-        return True
+        return RemoveResult(
+            success=True,
+            removed_files=removed_files,
+            removed_bytes=removed_bytes,
+            message="Model removed successfully.",
+        )
 
 
 remove_manager = RemoveManager()

@@ -1,28 +1,40 @@
+"""
+AIPM Command Line Interface.
+"""
+
 from __future__ import annotations
 
 import typer
 
-from aipm.commands import models
-from aipm.commands import download
-from aipm.commands import registry
-from aipm.commands import install
-from aipm.commands.install import run as install_run
-from aipm.commands import verify
-from aipm.commands import remove
-from aipm.commands import repair
-from aipm.commands import upgrade
-from aipm.commands import update
-from aipm.commands.search import run as search_run
-from aipm.commands import search
-from aipm.commands import download
-
-app = typer.Typer(
-    help="Universal AI Package Manager"
-)
-
 #
 # Command Groups
 #
+
+from aipm.commands import (
+    download,
+    models,
+    registry,
+    verify,
+    remove,
+    repair,
+    upgrade,
+    update,
+)
+
+#
+# Single Command Implementations
+#
+
+from aipm.commands.install import run as install_run
+from aipm.commands.search import run as search_run
+
+app = typer.Typer(
+    help="Universal AI Package Manager",
+)
+
+# ----------------------------------------------------------------------
+# Command Groups
+# ----------------------------------------------------------------------
 
 app.add_typer(
     models.app,
@@ -30,22 +42,25 @@ app.add_typer(
 )
 
 app.add_typer(
+    registry.app,
+    name="registry",
+)
+
+app.add_typer(
     download.app,
     name="download",
 )
+
 app.add_typer(
     verify.app,
     name="verify",
 )
 
 app.add_typer(
-    registry.app,
-    name="registry",
-)
-app.add_typer(
     remove.app,
     name="remove",
 )
+
 app.add_typer(
     repair.app,
     name="repair",
@@ -61,50 +76,20 @@ app.add_typer(
     name="update",
 )
 
-@app.command("search")
-def search_command(
-    keyword: str,
-) -> None:
-    """
-    Search registry.
-    """
-
-    search.run(keyword)
+# ----------------------------------------------------------------------
+# Single Commands
+# ----------------------------------------------------------------------
 
 @app.command("install")
 def install(
     name: str,
 ) -> None:
     """
-    Install AI model.
+    Install an AI model.
     """
 
     install_run(name)
 
-#
-# Single Commands
-#
-
-@app.command("doctor")
-def doctor_command() -> None:
-    """
-    Check system information.
-    """
-
-    from aipm.commands.doctor import run
-
-    run()
-
-
-@app.command("version")
-def version_command() -> None:
-    """
-    Show application version.
-    """
-
-    from aipm.commands.version import run
-
-    run()
 
 @app.command("search")
 def search(
@@ -116,11 +101,36 @@ def search(
 
     search_run(keyword)
 
-#
-# Global Options
-#
 
-@app.callback(invoke_without_command=True)
+@app.command("doctor")
+def doctor() -> None:
+    """
+    Check system information.
+    """
+
+    from aipm.commands.doctor import run
+
+    run()
+
+
+@app.command("version")
+def version() -> None:
+    """
+    Show application version.
+    """
+
+    from aipm.commands.version import run
+
+    run()
+
+
+# ----------------------------------------------------------------------
+# Global Options
+# ----------------------------------------------------------------------
+
+@app.callback(
+    invoke_without_command=True,
+)
 def main(
     version_flag: bool = typer.Option(
         False,
@@ -129,6 +139,12 @@ def main(
         help="Show version information.",
     ),
 ) -> None:
+    """
+    Universal AI Package Manager.
+    """
+
     if version_flag:
-        version_command()
+
+        version()
+
         raise typer.Exit()

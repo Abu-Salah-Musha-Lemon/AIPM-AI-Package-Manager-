@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import typer
 
-from aipm.registry import registry_manager
 from aipm.remove import remove_manager
 from aipm.utils.console import console
 
@@ -27,22 +26,6 @@ def main(
 
     if ctx.invoked_subcommand:
         return
-
-    #
-    # Registry check
-    #
-
-    try:
-
-        registry_manager.require(name)
-
-    except ValueError as error:
-
-        console.print(
-            f"[bold red]Error:[/bold red] {error}"
-        )
-
-        raise typer.Exit(1)
 
     console.print(
         f"[bold red]Removing:[/bold red] {name}"
