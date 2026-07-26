@@ -1,30 +1,92 @@
+"""
+Install CLI command.
+"""
+
 from __future__ import annotations
 
 import typer
 
-from aipm.download import download_manager
-from aipm.registry import registry_manager
+from aipm.install import (
+    install_manager,
+    InstallStatus,
+)
+
 from aipm.utils.console import console
 
 
-def run(name: str) -> None:
+def run(
+    name: str,
+) -> None:
     """
-    Install model from registry.
+    Install an AI model.
     """
 
-    model = registry_manager.get(name)
-
-    if model is None:
-        console.print(f"[red]Model '{name}' not found.[/red]")
-        raise typer.Exit(code=1)
-
-    console.print(f"[cyan]Installing {model.name}[/cyan]")
-
-    path = download_manager.download(
-        model.name,
-        model.url,
-        model.sha256,
+    console.print(
+        f"[bold cyan]Installing:[/bold cyan] {name}"
     )
 
-    console.print("[green]Installed successfully[/green]")
-    console.print(path)
+    result = install_manager.install(
+        name
+    )
+
+    #
+    # Failed
+    #
+
+    if result.status == InstallStatus.FAILED:
+
+        console.print(
+            f"[bold red]Error:[/bold red] {result.message}"
+        )
+
+        raise typer.Exit(
+            code=1
+        )
+
+    #
+    # Already installed
+    #
+
+    if result.status == InstallStatus.SKIPPED:
+
+        console.print(
+            "[bold yellow]Already installed.[/bold yellow]"
+        )
+
+        console.print(
+            f"Model   : {result.name}"
+        )
+
+        console.print(
+            f"Version : {result.version}"
+        )
+
+        if result.path:
+
+            console.print(
+                f"Path    : {result.path}"
+            )
+
+        return
+
+    #
+    # Success
+    #
+
+    console.print(
+        "\n[bold green]✓ Installation completed successfully[/bold green]"
+    )
+
+    console.print(
+        f"Model   : {result.name}"
+    )
+
+    console.print(
+        f"Version : {result.version}"
+    )
+
+    if result.path:
+
+        console.print(
+            f"Path    : {result.path}"
+        )

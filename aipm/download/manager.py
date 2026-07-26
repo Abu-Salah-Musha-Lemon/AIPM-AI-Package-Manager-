@@ -8,16 +8,15 @@ from pathlib import Path
 
 from aipm.cache import cache_manager
 from aipm.cache.models import CacheEntry
-
-from aipm.storage import storage_manager
 from aipm.download.hash import calculate_sha256
 from aipm.download.models import (
-    DownloadTask,
+    DownloadResult,
     DownloadStatus,
+    DownloadTask,
 )
 from aipm.download.queue import download_queue
 from aipm.logger import get_logger
-from aipm.utils.hash import sha256_file
+from aipm.storage import storage_manager
 
 
 class DownloadManager:
@@ -25,13 +24,15 @@ class DownloadManager:
     Manage AI model downloads.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+    ) -> None:
 
         self.log = get_logger(
             __name__
         )
 
-        models = storage_manager.get(
+        models = storage_manager.get_path(
             "models"
         )
 
@@ -41,7 +42,11 @@ class DownloadManager:
                 "Models storage is not configured."
             )
 
-    self.models = models
+        self.models = models
+
+        self.log.info(
+            "Download manager initialized."
+        )
 
     def download(
         self,
@@ -57,11 +62,15 @@ class DownloadManager:
         # Check cache
         #
 
-        cached = cache_manager.get(name)
+        cached = cache_manager.get(
+            name
+        )
 
         if (
             cached
-            and Path(cached.path).exists()
+            and Path(
+                cached.path
+            ).exists()
         ):
 
             self.log.info(
@@ -107,22 +116,32 @@ class DownloadManager:
         )
 
         #
-        # Execute queue
+        # Execute download queue
         #
 
-        result = download_queue.run(
+        results = download_queue.run(
             [task]
-        )[0]
+        )
+
+        if not results:
+
+            raise RuntimeError(
+                "Download queue returned no result."
+            )
+
+        result = results[0]
 
         if (
             result.status
             != DownloadStatus.SUCCESS
         ):
+
             raise RuntimeError(
                 result.message
             )
 
         if result.file is None:
+
             raise RuntimeError(
                 "Download returned no file."
             )
@@ -134,7 +153,7 @@ class DownloadManager:
         )
 
         #
-        # Verify SHA256
+        # Verify checksum
         #
 
         if sha256:
@@ -157,7 +176,7 @@ class DownloadManager:
                 )
 
         #
-        # Save cache
+        # Save cache entry
         #
 
         cache_manager.add(
@@ -180,14 +199,18 @@ class DownloadManager:
 
         )
 
+        self.log.info(
+            f"Cached model: {name}"
+        )
+
         return target
 
     def download_many(
         self,
         tasks: list[DownloadTask],
-    ):
+    ) -> list[DownloadResult]:
         """
-        Download multiple models concurrently.
+        Download multiple models.
         """
 
         return download_queue.run(
@@ -204,9 +227,10 @@ class DownloadManager:
         """
 
         if not expected:
+
             return True
 
-        actual = sha256_file(
+        actual = calculate_sha256(
             file
         )
 
