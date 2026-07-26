@@ -1,32 +1,23 @@
 """
-Update models.
+Update result models.
 """
 
 from __future__ import annotations
 
-from enum import Enum
-
 from pydantic import BaseModel
 
 
-class UpdateStatus(
-    str,
-    Enum,
-):
-
-    UPDATED = "updated"
-
-    SKIPPED = "skipped"
-
-    FAILED = "failed"
-
-
 class UpdateResult(BaseModel):
+    """
+    Result of a model update.
+    """
 
-    status: UpdateStatus
+    success: bool
 
-    old_version: str = ""
+    updated: bool = False
 
-    new_version: str = ""
+    downloaded: bool = False
+
+    verified: bool = False
 
     message: str = ""

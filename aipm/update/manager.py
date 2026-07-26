@@ -4,18 +4,14 @@ Update manager for AIPM.
 
 from __future__ import annotations
 
-from aipm.logger import get_logger
-
-from aipm.registry import registry_manager
-from aipm.models import model_manager
 from aipm.download import download_manager
+from aipm.logger import get_logger
+from aipm.registry import registry_manager
+from aipm.remove import remove_manager
 from aipm.verify import verify_manager
-
-from aipm.utils.version import compare_versions
 
 from aipm.update.models import (
     UpdateResult,
-    UpdateStatus,
 )
 
 
@@ -24,7 +20,9 @@ class UpdateManager:
     Update installed AI models.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+    ) -> None:
 
         self.log = get_logger(
             __name__
@@ -35,120 +33,125 @@ class UpdateManager:
         name: str,
     ) -> UpdateResult:
         """
-        Update an installed AI model.
+        Update one installed model.
         """
 
         #
-        # Lookup registry
+        # Registry lookup
         #
 
-        registry_model = registry_manager.get(
+        model = registry_manager.get(
             name
         )
 
-        if registry_model is None:
+        if model is None:
 
             self.log.error(
                 "Registry entry not found."
             )
 
             return UpdateResult(
-                status=UpdateStatus.FAILED,
-                message="Registry entry not found.",
+
+                success=False,
+
+                message=(
+                    "Registry entry not found."
+                ),
+
             )
 
         #
-        # Check installation
+        # Verify installation
         #
 
-        if not model_manager.exists(
+        verify = verify_manager.verify(
             name
-        ):
+        )
+
+        if not verify.exists:
 
             self.log.error(
                 "Model is not installed."
             )
 
             return UpdateResult(
-                status=UpdateStatus.FAILED,
+
+                success=False,
+
                 message="Model is not installed.",
+
             )
 
         #
-        # Installed metadata
+        # Already latest?
         #
 
-        installed = model_manager.get_metadata(
-            name
-        )
-
-        installed_version = installed.version
-
-        latest_version = (
-            registry_model.version
-        )
-
-        #
-        # Compare versions
-        #
-
-        comparison = compare_versions(
-            installed_version,
-            latest_version,
-        )
-
-        #
-        # Already latest
-        #
-
-        if comparison == 0:
+        if (
+            verify.checksum_valid
+            and verify.metadata_valid
+        ):
 
             self.log.info(
                 "Already up-to-date."
             )
 
             return UpdateResult(
-                status=UpdateStatus.SKIPPED,
-                old_version=installed_version,
-                new_version=latest_version,
+
+                success=True,
+
+                updated=False,
+
+                downloaded=False,
+
+                verified=True,
+
                 message="Already up-to-date.",
+
             )
-
         #
-        # Installed newer than registry
-        #
-
-        if comparison > 0:
-
-            self.log.warning(
-                "Installed version is newer than registry."
-            )
-
-            return UpdateResult(
-                status=UpdateStatus.SKIPPED,
-                old_version=installed_version,
-                new_version=latest_version,
-                message="Installed version is newer.",
-            )
-
-        #
-        # Update required
+        # Remove old installation
         #
 
         self.log.info(
-            f"Updating {installed_version} -> {latest_version}"
+            "Removing old installation..."
         )
 
+        remove_result = remove_manager.remove(
+            name
+        )
+
+        if not remove_result.success:
+
+            self.log.error(
+                remove_result.message
+            )
+
+            return UpdateResult(
+
+                success=False,
+
+                message=remove_result.message,
+
+            )
+
         #
-        # Download latest version
+        # Download latest model
         #
+
+        self.log.info(
+            "Downloading latest model..."
+        )
 
         try:
 
             download_manager.download(
-                name=name,
-                url=registry_model.url,
-                sha256=registry_model.sha256,
+
+                name=model.name,
+
+                url=model.url,
+
+                sha256=model.sha256,
+
             )
 
         except Exception as error:
@@ -158,56 +161,73 @@ class UpdateManager:
             )
 
             return UpdateResult(
-                status=UpdateStatus.FAILED,
-                old_version=installed_version,
-                new_version=latest_version,
+
+                success=False,
+
+                downloaded=False,
+
                 message=str(error),
+
             )
-
+                #
+        # Final verification
         #
-        # Verify installation
-        #
 
-        verified = verify_manager.verify(
+        self.log.info(
+            "Running verification..."
+        )
+
+        verify = verify_manager.verify(
             name
         )
 
-        if not verified:
+        if (
+            not verify.exists
+            or not verify.checksum_valid
+            or not verify.metadata_valid
+        ):
 
             self.log.error(
-                "Verification failed."
+                verify.message
             )
 
             return UpdateResult(
-                status=UpdateStatus.FAILED,
-                old_version=installed_version,
-                new_version=latest_version,
-                message="Verification failed.",
+
+                success=False,
+
+                updated=False,
+
+                downloaded=True,
+
+                verified=False,
+
+                message=verify.message,
+
             )
 
         #
-        # Update metadata
+        # Update completed
         #
-
-        model_manager.update_metadata(
-            name=name,
-            version=latest_version,
-        )
-
-        self.log.info(
-            "Metadata updated."
-        )
 
         self.log.info(
             "Update completed successfully."
         )
 
         return UpdateResult(
-            status=UpdateStatus.UPDATED,
-            old_version=installed_version,
-            new_version=latest_version,
-            message="Updated successfully.",
-        )
 
+            success=True,
+
+            updated=True,
+
+            downloaded=True,
+
+            verified=True,
+
+            message="Update completed successfully.",
+
+        )
+    #
+# Singleton
+#
 
 update_manager = UpdateManager()

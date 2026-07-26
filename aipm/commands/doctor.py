@@ -1,182 +1,242 @@
+"""
+Doctor CLI commands for AIPM.
+"""
+
 from __future__ import annotations
 
 import platform
 
 from rich.table import Table
 
-from aipm.config import load_config
-from aipm.logger import get_logger
-from aipm.system.detector import detect_system
+from aipm.doctor import (
+    doctor_manager,
+    DoctorStatus,
+)
 from aipm.utils.console import console
-from aipm.storage import storage_manager
-from aipm.config import load_config
-from aipm.logger import get_logger
-from aipm.storage import storage_manager
-from aipm.system.detector import detect_system
-from aipm.utils.console import console
+
 
 def run() -> None:
-    """Display basic environment information."""
+    """
+    Display diagnostic information.
+    """
 
-    log = get_logger(__name__)
+    result = doctor_manager.run()
 
-    log.info("Doctor command started")
+    if result.status != DoctorStatus.SUCCESS:
 
-    cfg = load_config()
+        console.print(
+            f"[bold red]Error:[/bold red] {result.message}"
+        )
 
-    log.info("Configuration loaded")
+        return
 
-    storage_manager.initialize()
+    #
+    # Application
+    #
 
-    log.info(
-        "Storage initialization completed"
-    )
-    system = detect_system()
-
-    log.info(
-        "System detection completed"
-    )
-
-    storage_manager.initialize()
-
-    log.info(
-        "Storage initialization completed"
+    app_table = Table(
+        title="AIPM Doctor"
     )
 
-    table = Table(title="AIPM Doctor")
-
-    table.add_column("Property", style="cyan")
-    table.add_column("Value", style="green")
-
-    table.add_row("Application", cfg.app.name)
-    table.add_row("Version", cfg.app.version)
-    table.add_row("Python", platform.python_version())
-    table.add_row("Platform", platform.system())
-    table.add_row("Release", platform.release())
-    table.add_row("Architecture", platform.machine())
-    table.add_row("Storage", str(cfg.storage.root))
-
-
-    system_table = Table(title="System Information")
-    storage_table = Table(
-    title="Storage Information"
+    app_table.add_column(
+        "Property",
+        style="cyan",
     )
 
-    storage_table.add_column(
-        "Directory",
-        style="cyan"
+    app_table.add_column(
+        "Value",
+        style="green",
     )
 
-    storage_table.add_column(
-        "Status",
-        style="green"
+    app_table.add_row(
+        "Application",
+        result.application,
     )
 
-    system_table.add_column("Property", style="cyan")
-    system_table.add_column("Value", style="green")
+    app_table.add_row(
+        "Version",
+        result.version,
+    )
+
+    app_table.add_row(
+        "Python",
+        platform.python_version(),
+    )
+
+    app_table.add_row(
+        "Platform",
+        platform.system(),
+    )
+
+    app_table.add_row(
+        "Release",
+        platform.release(),
+    )
+
+    app_table.add_row(
+        "Architecture",
+        platform.machine(),
+    )
+
+    app_table.add_row(
+        "Storage",
+        result.storage_root,
+    )
+
+    #
+    # System
+    #
+
+    system = result.system
+
+    system_table = Table(
+        title="System Information"
+    )
+
+    system_table.add_column(
+        "Property",
+        style="cyan",
+    )
+
+    system_table.add_column(
+        "Value",
+        style="green",
+    )
 
     system_table.add_row(
         "Operating System",
-        system.operating_system
+        system.operating_system,
     )
 
     system_table.add_row(
         "Release",
-        system.release
+        system.release,
     )
 
     system_table.add_row(
         "Architecture",
-        system.architecture
+        system.architecture,
     )
 
     system_table.add_row(
         "Python",
-        system.python_version
+        system.python_version,
     )
 
     system_table.add_row(
         "CPU",
-        system.cpu.name
+        system.cpu.name,
     )
 
     system_table.add_row(
         "CPU Cores",
-        str(system.cpu.cores)
+        str(system.cpu.cores),
     )
 
     system_table.add_row(
         "CPU Threads",
-        str(system.cpu.threads)
+        str(system.cpu.threads),
     )
 
     system_table.add_row(
         "RAM",
-        system.memory.total
+        system.memory.total,
     )
 
     system_table.add_row(
         "Available RAM",
-        system.memory.available
+        system.memory.available,
     )
 
     system_table.add_row(
         "Disk Free",
-        system.disk.free
+        system.disk.free,
     )
 
     system_table.add_row(
         "GPU Vendor",
-        system.gpu.vendor
+        system.gpu.vendor,
     )
 
     system_table.add_row(
         "GPU Name",
-        system.gpu.name
+        system.gpu.name,
     )
 
     system_table.add_row(
         "GPU Memory",
-        system.gpu.memory
+        system.gpu.memory,
     )
 
     system_table.add_row(
         "GPU Driver",
-        system.gpu.driver
+        system.gpu.driver,
     )
 
     system_table.add_row(
         "CUDA Available",
-        str(system.gpu.cuda_available)
+        str(system.gpu.cuda_available),
     )
 
     system_table.add_row(
         "CUDA Version",
-        system.gpu.cuda_version
+        system.gpu.cuda_version,
     )
-    for name in [
-        "cache",
-        "models",
-        "loras",
-        "workflows",
-        "outputs",
-        "logs",
-    ]:
 
-        status = (
-            "Ready"
-            if storage_manager.exists(name)
-            else "Missing"
-        )
+    #
+    # Storage
+    #
 
-        storage_table.add_row(
-            name.capitalize(),
-            status,
-        )
-    console.print(table)
+    storage_table = Table(
+        title="Storage Information"
+    )
 
+    storage_table.add_column(
+        "Directory",
+        style="cyan",
+    )
+
+    storage_table.add_column(
+        "Status",
+        style="green",
+    )
+
+    storage = result.storage
+
+    storage_table.add_row(
+        "Cache",
+        "Ready" if storage.cache else "Missing",
+    )
+
+    storage_table.add_row(
+        "Models",
+        "Ready" if storage.models else "Missing",
+    )
+
+    storage_table.add_row(
+        "Loras",
+        "Ready" if storage.loras else "Missing",
+    )
+
+    storage_table.add_row(
+        "Workflows",
+        "Ready" if storage.workflows else "Missing",
+    )
+
+    storage_table.add_row(
+        "Outputs",
+        "Ready" if storage.outputs else "Missing",
+    )
+
+    storage_table.add_row(
+        "Logs",
+        "Ready" if storage.logs else "Missing",
+    )
+
+    console.print(app_table)
     console.print(system_table)
-
     console.print(storage_table)
 
-    log.info("Doctor completed successfully")
+    console.print(
+        "\n[bold green]✓ Doctor completed successfully[/bold green]"
+    )
