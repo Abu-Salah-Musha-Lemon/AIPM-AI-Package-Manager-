@@ -1,15 +1,65 @@
-from aipm import APP_NAME, __version__
+"""
+Version CLI command for AIPM.
+"""
+
+from __future__ import annotations
+
+from rich.table import Table
+
+from aipm.version import (
+    version_manager,
+    VersionStatus,
+)
 from aipm.utils.console import console
-from aipm.logger import get_logger
+
 
 def run() -> None:
-    """Display AIPM version."""
+    """
+    Display AIPM version information.
+    """
 
-    log = get_logger(__name__)
+    result = version_manager.get_version()
 
-    log.info("Version command executed")
+    if result.status != VersionStatus.SUCCESS:
 
-    console.print(
-        f"[bold cyan]{APP_NAME}[/bold cyan] "
-        f"[green]v{__version__}[/green]"
+        console.print(
+            f"[bold red]Error:[/bold red] {result.message}"
+        )
+
+        return
+
+    table = Table(
+        title="AIPM Version"
     )
+
+    table.add_column(
+        "Property",
+        style="cyan",
+    )
+
+    table.add_column(
+        "Value",
+        style="green",
+    )
+
+    table.add_row(
+        "Application",
+        result.application,
+    )
+
+    table.add_row(
+        "Version",
+        result.version,
+    )
+
+    table.add_row(
+        "Python",
+        result.python,
+    )
+
+    table.add_row(
+        "Platform",
+        result.platform,
+    )
+
+    console.print(table)
