@@ -4,11 +4,11 @@ Repair manager for AIPM.
 
 from __future__ import annotations
 
-from aipm.logger import get_logger
-
 from aipm.download import download_manager
+from aipm.logger import get_logger
 from aipm.registry import registry_manager
 from aipm.remove import remove_manager
+from aipm.repair.models import RepairResult
 from aipm.verify import verify_manager
 
 
@@ -25,103 +25,217 @@ class RepairManager:
         self,
         name: str,
         progress: bool = False,
-    ) -> bool:
+    ) -> RepairResult:
         """
-        Repair a model.
+        Repair an installed model.
         """
 
         #
         # Lookup registry
         #
 
-        model = registry_manager.get(name)
+        try:
+
+            model = registry_manager.require(
+                name
+            )
+
+        except ValueError as error:
+
+            return RepairResult(
+
+                success=False,
+
+                message=str(error),
+
+            )
 
         if progress:
+
             self.log.info(
                 "Checking registry..."
             )
 
-        model = registry_manager.get(name)
-
-        if model is None:
-
-            self.log.error(
-                "Registry entry not found."
-            )
-
-            return False
-
-        if progress:
-            self.log.info(
-                "Registry OK"
-            )
-
         #
-        # Verify model
+        # Verify installation
         #
 
         if progress:
+
             self.log.info(
                 "Verifying installation..."
             )
 
-        healthy = verify_manager.verify(name)
+        verify_result = (
+            verify_manager.verify(
+                name
+            )
+        )
 
-        if healthy:
+        #
+        # Already healthy
+        #
+
+        if (
+
+            verify_result.exists
+
+            and verify_result.checksum_valid
+
+            and verify_result.metadata_valid
+
+        ):
 
             self.log.info(
                 "Model is healthy."
             )
 
-            return True
+            return RepairResult(
+
+                success=True,
+
+                repaired=False,
+
+                downloaded=False,
+
+                verified=True,
+
+                message="Model is already healthy.",
+
+            )
 
         #
-        # Remove broken model
+        # Remove corrupted files
         #
 
         self.log.warning(
             "Removing corrupted model..."
         )
 
-        remove_manager.remove(name)
-
-        #
-        # Download again
-        #
-
-        self.log.info(
-            "Downloading latest  model..."
+        remove_result = (
+            remove_manager.remove(
+                name
+            )
         )
 
-        download_manager.download(
-            name=model.name,
-            url=model.url,
-            sha256=model.sha256,
-        )
+        if not remove_result.success:
+
+            return RepairResult(
+
+                success=False,
+
+                repaired=False,
+
+                downloaded=False,
+
+                verified=False,
+
+                message=remove_result.message,
+
+            )
+
+        if progress:
+
+            self.log.info(
+                "Downloading latest model..."
+            )
+                #
+        # Download latest model
+        #
+
+        try:
+
+            download_manager.download(
+
+                name=model.name,
+
+                url=model.url,
+
+                sha256=model.sha256,
+
+            )
+
+        except Exception as error:
+
+            self.log.error(
+                str(error)
+            )
+
+            return RepairResult(
+
+                success=False,
+
+                repaired=True,
+
+                downloaded=False,
+
+                verified=False,
+
+                message=str(error),
+
+            )
 
         #
         # Final verification
         #
 
-        self.log.info(
-            "Running final verification..."
+        if progress:
+
+            self.log.info(
+                "Running final verification..."
+            )
+
+        verify_result = (
+            verify_manager.verify(
+                name
+            )
         )
 
-        result = verify_manager.verify(name)
+        if (
 
-        if result:
+            verify_result.exists
+
+            and verify_result.checksum_valid
+
+            and verify_result.metadata_valid
+
+        ):
 
             self.log.info(
                 "Repair completed."
             )
 
-        else:
+            return RepairResult(
 
-            self.log.error(
-                "Repair failed."
+                success=True,
+
+                repaired=True,
+
+                downloaded=True,
+
+                verified=True,
+
+                message="Repair completed successfully.",
+
             )
 
-        return result
+        self.log.error(
+            "Repair failed."
+        )
+
+        return RepairResult(
+
+            success=False,
+
+            repaired=True,
+
+            downloaded=True,
+
+            verified=False,
+
+            message=verify_result.message,
+
+        )
 
 
 repair_manager = RepairManager()
