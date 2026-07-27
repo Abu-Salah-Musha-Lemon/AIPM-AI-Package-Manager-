@@ -30,7 +30,7 @@ from aipm.commands.search import run as search_run
 from aipm.commands import (
     history,
 )
-
+from aipm.commands.health import app as health_app
 app = typer.Typer(
     help="Universal AI Package Manager",
 )
@@ -82,7 +82,10 @@ app.add_typer(
     history.app,
     name="history",
 )
-
+app.add_typer(
+    health_app,
+    name="health",
+)
 
 # ----------------------------------------------------------------------
 # Single Commands
